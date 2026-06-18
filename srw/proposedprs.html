@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>grblHAL — Proposed Upstream PRs</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 980px; margin: 2em auto; padding: 0 1em; color: #222; line-height: 1.45; }
+  h1 { margin-bottom: 0.2em; }
+  .subtitle { color: #666; margin-top: 0; font-size: 0.95em; }
+  .pr { border: 1px solid #ddd; border-radius: 6px; padding: 1em 1.2em; margin-bottom: 1.5em; background: #fafafa; }
+  .pr h2 { margin-top: 0; font-size: 1.15em; color: #0366d6; }
+  .meta { font-size: 0.85em; color: #555; margin-bottom: 0.6em; }
+  .meta code { background: #eef1f4; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  .summary { margin: 0.6em 0; }
+  .why { background: #fffbea; border-left: 3px solid #f0c040; padding: 0.5em 0.8em; margin: 0.6em 0; font-size: 0.9em; }
+  .files { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; color: #444; }
+  .actions { margin-top: 0.8em; }
+  .actions a { display: inline-block; margin-right: 0.6em; padding: 5px 12px; background: #0366d6; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85em; }
+  .actions a.secondary { background: #6a737d; }
+  .actions a:hover { opacity: 0.9; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; margin-left: 0.5em; vertical-align: middle; }
+  .status.draft { background: #f0c040; color: white; }
+  .status.ready { background: #28a745; color: white; }
+  .status.local { background: #6a737d; color: white; }
+  .section-divider { font-size: 1.05em; color: #444; border-top: 1px solid #eee; padding-top: 1em; margin-top: 2em; }
+  .section-divider span { font-weight: 400; font-size: 0.85em; color: #888; }
+  footer { margin-top: 3em; color: #777; font-size: 0.85em; border-top: 1px solid #eee; padding-top: 1em; }
+</style>
+</head>
+<body>
+
+<h1>grblHAL — Proposed Upstream PRs</h1>
+<p class="subtitle">PRs filed against <code>grblHAL/*</code> from branches on <code>stevenrwood</code>'s forks. Click the PR# button on a card to jump to the live review.</p>
+
+<div class="pr">
+  <h2>1. Fix grblHAL hang when soft-reset arrives during $F= SD streaming <span class="status ready">Open #13</span></h2>
+  <div class="meta">
+    Repo: <code>grblHAL/Plugin_SD_card</code> &nbsp; · &nbsp;
+    Branch: <code>stevenrwood:fix/reset-during-sd-streaming</code> &nbsp; · &nbsp;
+    Files: <span class="files">fs_stream.c</span>
+  </div>
+  <div class="summary">
+    The cleanup branch in <code>onReset()</code> required <code>hal.stream.type == StreamType_File</code>, which transiently becomes false during tool-change <code>suspend_read</code> and <code>on_stream_changed</code> callbacks. A reset arriving in that window leaks the file handle and the stream redirection. Symptom: grblHAL hangs and ioSender access-violates on the next command; only a Teensy power-cycle recovers it.
+  </div>
+  <div class="why">Verified locally: reproducible pre-fix (reset during install-probe M0 hold), clean recovery post-fix. Tightened guard fires when EITHER <code>file.handle</code> is open OR <code>active_stream.type</code> is non-Null; <code>stream_end_job</code> is already idempotent.</div>
+  <div class="actions">
+    <a href="https://github.com/grblHAL/Plugin_SD_card/pull/13">PR #13</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_SD_card/compare/master...fix/reset-during-sd-streaming">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_SD_card/tree/fix/reset-during-sd-streaming">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>2. Add <code>DEFAULT_MACRO_ATC_OPTIONS</code> build-time default for $675 <span class="status ready">Open #14</span></h2>
+  <div class="meta">
+    Repo: <code>grblHAL/Plugin_SD_card</code> &nbsp; · &nbsp;
+    Branch: <code>stevenrwood:feat/default-macro-atc-options</code> &nbsp; · &nbsp;
+    Files: <span class="files">macros.c</span>
+  </div>
+  <div class="summary">
+    The <code>$675</code> setting is currently restored to <code>0</code> hardcoded on first boot or <code>$RST=$</code>. A build-time <code>#define DEFAULT_MACRO_ATC_OPTIONS &lt;n&gt;</code> lets drivers ship firmware where the setting defaults to something else — useful when senders want to detect ATC capability via the <code>ATC=0</code>/<code>ATC=1</code> token in <code>$I</code> rather than the generic <code>TC,</code> fallback.
+  </div>
+  <div class="why">Follows the same <code>#ifndef DEFAULT_xxx</code> pattern used throughout <code>config.h</code> for other settings. Default behavior unchanged.</div>
+  <div class="actions">
+    <a href="https://github.com/grblHAL/Plugin_SD_card/pull/14">PR #14</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_SD_card/compare/master...feat/default-macro-atc-options">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_SD_card/tree/feat/default-macro-atc-options">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>3. Honor <code>LITTLEFS_ENABLE=2</code> as YMODEM request even when SDCARD is enabled <span class="status ready">Open #966</span></h2>
+  <div class="meta">
+    Repo: <code>grblHAL/core</code> &nbsp; · &nbsp;
+    Branch: <code>stevenrwood:feat/littlefs-ymodem-combined</code> &nbsp; · &nbsp;
+    Files: <span class="files">driver_opts.h</span>
+  </div>
+  <div class="summary">
+    Pre-existing code in <code>driver_opts.h</code> demotes <code>LITTLEFS_ENABLE</code> from <code>2</code> to <code>1</code> whenever SDCARD is also enabled (to handle the root-mount conflict). The demotion runs before <code>FS_ENABLE</code> is computed, so the "<code>=2</code> implies YMODEM" semantic — which works for LittleFS-alone — was unreachable in the combined config. NEWOPT advertised <code>FS,SD</code> instead of <code>YM,SD</code>; <code>ymodem_init()</code> never fired.
+  </div>
+  <div class="why">Captures the user's <code>=2</code> intent into a new <code>LITTLEFS_YMODEM_REQUESTED</code> flag before demotion. FS_ENABLE in the combined case grants YMODEM if either <code>SDCARD_ENABLE==2</code> OR <code>LITTLEFS_YMODEM_REQUESTED</code>. Mount-dir logic tightened to only put LittleFS at <code>/</code> when SDCARD is absent at build time. Tested end-to-end on Teensy 4.1.</div>
+  <div class="actions">
+    <a href="https://github.com/grblHAL/core/pull/966">PR #966</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/compare/master...feat/littlefs-ymodem-combined">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/tree/feat/littlefs-ymodem-combined">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>4. Add <code>[BUILD:...]</code> line to <code>$I</code> from generated <code>build_stamp.h</code> <span class="status draft">Draft #967</span></h2>
+  <div class="meta">
+    Repo: <code>grblHAL/core</code> &nbsp; · &nbsp;
+    Branch: <code>stevenrwood:feat/build-timestamp-line</code> &nbsp; · &nbsp;
+    Files: <span class="files">report.c</span>
+  </div>
+  <div class="summary">
+    <code>GRBL_BUILD</code> in <code>grbl.h</code> is a hand-edited integer literal that only changes when an upstream release is tagged. Operators rebuilding firmware locally have no way to confirm via <code>$I</code> that the running <code>.hex</code> matches the one they just produced. This PR adds a <code>[BUILD:&lt;date&gt; &lt;time&gt;]</code> line guarded by <code>__has_include("build_stamp.h")</code> — drivers that ship a <code>build_stamp.h</code> with a <code>BUILD_TIMESTAMP</code> macro get the line; drivers that don't are unaffected.
+  </div>
+  <div class="why">Marked Discuss because Terje may prefer his own build-stamping approach. Companion driver-side plumbing (a PlatformIO pre-build script regenerating <code>build_stamp.h</code> each build) lives in each driver, not core — keeps this PR minimal.</div>
+  <div class="actions">
+    <a href="https://github.com/grblHAL/core/pull/967">PR #967</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/compare/master...feat/build-timestamp-line">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/tree/feat/build-timestamp-line">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>5. Report mDNS hostname in <code>$I</code> boot info <span class="status ready">Open #22</span></h2>
+  <div class="meta">
+    Repo: <code>grblHAL/Plugin_networking</code> &nbsp; · &nbsp;
+    Branch: <code>stevenrwood:feat/hostname-boot-info</code> &nbsp; · &nbsp;
+    Files: <span class="files">wiznet/enet.c</span>
+  </div>
+  <div class="summary">
+    <code>$I</code> currently emits <code>[IP:...]</code> but not the hostname being broadcast over mDNS. Diagnosing "<code>grblhal.local</code> won't resolve" is hard when you don't know whether mDNS is silently failing, broadcasting a different name than you expect, or running fine on a network where the client just can't see it. This PR emits <code>[HOSTNAME:&lt;name&gt;.local]</code> immediately after <code>[IP:...]</code> when <code>MDNS_ENABLE</code> is set.
+  </div>
+  <div class="why">Single-line addition guarded by <code>MDNS_ENABLE</code> and a non-empty hostname check. <code>.local</code> suffix appended in the output (not stored) so the operator sees the exact form clients should query.</div>
+  <div class="actions">
+    <a href="https://github.com/grblHAL/Plugin_networking/pull/22">PR #22</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_networking/compare/master...feat/hostname-boot-info">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/Plugin_networking/tree/feat/hostname-boot-info">Browse branch</a>
+  </div>
+</div>
+
+<h2 class="section-divider">Driver-local patches <span>— kept in the driver fork, not submitted upstream</span></h2>
+
+<div class="pr">
+  <h2>SRW build config for BOARD_T41U5XBB on Teensy 4.1 <span class="status local">Driver-local</span></h2>
+  <div class="meta">
+    Repo: <code>stevenrwood/iMXRT1062</code> (driver fork) &nbsp; · &nbsp;
+    Branch: <code>srw/local-build-config</code> &nbsp; · &nbsp;
+    Files: <span class="files">grblHAL_Teensy4/src/my_machine.h, grblHAL_Teensy4/platformio.ini, grblHAL_Teensy4/scripts/touch_build_stamp.py, .gitignore</span>
+  </div>
+  <div class="summary">
+    Carries the SRW build-time config so any machine that clones <code>stevenrwood/iMXRT1062</code> at this branch builds the same firmware. <code>my_machine.h</code> mirrors the Web Builder JSON (17 symbols) plus two unmerged-PR features (<code>LITTLEFS_ENABLE=2</code> for combined SDCARD+LittleFS YMODEM via PR #966, and <code>DEFAULT_MACRO_ATC_OPTIONS=2</code> via PR #14). <code>platformio.ini</code> wires in a pre-build script that regenerates <code>build_stamp.h</code> with the current datetime each compile, so the <code>[BUILD:...]</code> line from PR #967 reflects the actual build moment.
+  </div>
+  <div class="why">Lives on its own branch so it doesn't interfere with future <code>master</code> updates from upstream and isn't confused with the PR branches. To use on a fresh checkout: <code>git clone -b srw/local-build-config https://github.com/stevenrwood/iMXRT1062.git</code>, then <code>git submodule update --init --recursive</code>, then run <code>setup_forks.sh</code> from this repo to add the <code>fork</code> remotes and pull the 5 PR branches into the relevant submodules.</div>
+  <div class="actions">
+    <a class="secondary" href="https://github.com/stevenrwood/iMXRT1062/compare/master...srw/local-build-config">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/iMXRT1062/tree/srw/local-build-config">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>Case-insensitive LittleFS name matching <span class="status local">Driver-local</span></h2>
+  <div class="meta">
+    Repo: <code>stevenrwood/iMXRT1062</code> (driver fork) &nbsp; · &nbsp;
+    Branch: <code>pr/littlefs-case-insensitive</code> &nbsp; · &nbsp;
+    Files: <span class="files">grblHAL_Teensy4/src/littlefs/lfs.c, grblHAL_Teensy4/platformio.ini</span>
+  </div>
+  <div class="summary">
+    The g-code parser upper-cases O-word labels, so <code>O&lt;cal&gt; CALL</code> looks for <code>/littlefs/CAL.macro</code> — but LittleFS is case-sensitive while FatFs (SD) is case-insensitive, and the VFS treats the two filesystems interchangeably. A lower-case <code>cal.macro</code> on LittleFS then isn't found, and (because <code>ngc_flowctrl</code> masks the file-open failure) it surfaces misleadingly as <code>error:81 Unknown flow statement</code>. A build flag <code>LFS_CASE_INSENSITIVE</code> adds case-folded name comparison so LittleFS matches FatFs semantics — making the upper-casing a non-issue for <em>every</em> file operation, not just macro calls.
+  </div>
+  <div class="why">Not an upstream PR: it patches the driver's <strong>vendored</strong> <code>littlefs/lfs.c</code>, which Terje is unlikely to accept as a core/plugin change. Kept driver-local in the <code>stevenrwood/iMXRT1062</code> fork instead. (Considered and rejected: a core-side CALL fallback that lower-cases the macro filename — narrower, only covers the macro path, and doesn't make the two filesystems behave consistently.)</div>
+  <div class="actions">
+    <a class="secondary" href="https://github.com/stevenrwood/iMXRT1062/compare/master...pr/littlefs-case-insensitive">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/iMXRT1062/tree/pr/littlefs-case-insensitive">Browse branch</a>
+  </div>
+</div>
+
+<footer>
+  <p><strong>Add PRs from Windows laptop</strong>: when you push additional branches from the laptop, append a new <code>&lt;div class="pr"&gt;</code> block here using the same template — repo, branch, summary, why, actions. Two URL patterns are useful:<br>
+  Compare page (before the PR is filed): <code>https://github.com/grblHAL/&lt;REPO&gt;/compare/master...stevenrwood:&lt;REPO&gt;:&lt;BRANCH&gt;?expand=1</code><br>
+  Live PR (after <code>gh pr create</code>): <code>https://github.com/grblHAL/&lt;REPO&gt;/pull/&lt;N&gt;</code></p>
+  <p>Forks created: <a href="https://github.com/stevenrwood/core">core</a> · <a href="https://github.com/stevenrwood/Plugin_SD_card">Plugin_SD_card</a> · <a href="https://github.com/stevenrwood/Plugin_networking">Plugin_networking</a> · <a href="https://github.com/stevenrwood/iMXRT1062">iMXRT1062</a> (driver, for driver-local patches)</p>
+</footer>
+
+</body>
+</html>

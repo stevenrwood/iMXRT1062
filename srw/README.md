@@ -1,0 +1,95 @@
+# SRW build-config branch — laptop bootstrap
+
+You're on branch `srw/local-build-config` of `stevenrwood/iMXRT1062`, the SRW fork of the grblHAL Teensy 4.x driver. This branch carries everything a fresh machine needs to build SRW's firmware for the T41U5XBB breakout and pick up the 5 in-flight upstream PRs.
+
+## What this branch adds on top of upstream `grblHAL/iMXRT1062` master
+
+| Path | Purpose |
+|---|---|
+| `grblHAL_Teensy4/src/my_machine.h` | BOARD_T41U5XBB config — 17 Web Builder JSON symbols + `LITTLEFS_ENABLE=2` (PR #966) + `DEFAULT_MACRO_ATC_OPTIONS=2` (PR #14) |
+| `grblHAL_Teensy4/platformio.ini` | Adds `extra_scripts = pre:scripts/touch_build_stamp.py` |
+| `grblHAL_Teensy4/scripts/touch_build_stamp.py` | Pre-build hook that rewrites `src/build_stamp.h` with the current datetime on every compile. Companion to PR #967 |
+| `.gitignore` | Excludes the generated `src/build_stamp.h` |
+| `srw/` | This directory — tracker + bootstrap files |
+
+## What's in `srw/`
+
+| File | Purpose |
+|---|---|
+| `firmware-forks.json` | Maps each grblHAL submodule to its `stevenrwood` fork URL and lists branches pushed (with live PR numbers and status) |
+| `proposedprs.html` | Human-readable summary of the 5 upstream PRs + the 2 driver-local branches. Open in a browser |
+| `setup_forks.sh` | One-shot script that configures a `fork` remote on each submodule from the JSON manifest |
+| `README.md` | This file |
+
+The canonical copies of these tracker files live in `https://github.com/stevenrwood/grblHAL-teensy-4.x` at the repo root. The copies here are convenience snapshots so the laptop can bootstrap from a single clone of the driver fork. If you update one set, sync the other.
+
+## Fresh-machine bootstrap
+
+```bash
+# Clone the driver fork at this branch
+git clone -b srw/local-build-config https://github.com/stevenrwood/iMXRT1062.git
+cd iMXRT1062
+
+# Initialize submodules (core, sdcard, networking, eeprom, etc.)
+git submodule update --init --recursive
+
+# Add the stevenrwood 'fork' remote on each PR-bearing submodule
+./srw/setup_forks.sh .
+```
+
+After `setup_forks.sh`, each of `grblHAL_Teensy4/src/{grbl,sdcard,networking}` has a `fork` remote pointing at the matching `stevenrwood/*` repo, with all 5 PR branches already visible under `fork/*`.
+
+## Check out the PR branches for a build that exercises all 5 PRs
+
+The branches don't conflict — each PR touches one distinct file — so you can stack them per submodule:
+
+```bash
+# core: two PRs, stack them on a combined branch
+cd grblHAL_Teensy4/src/grbl
+git checkout -b srw/combined fork/feat/littlefs-ymodem-combined
+git merge --no-edit fork/feat/build-timestamp-line
+
+# sdcard: two PRs, stack them
+cd ../sdcard
+git checkout -b srw/combined fork/fix/reset-during-sd-streaming
+git merge --no-edit fork/feat/default-macro-atc-options
+
+# networking: one PR
+cd ../networking
+git checkout fork/feat/hostname-boot-info -b srw/combined
+```
+
+To use upstream master instead (no SRW PRs active), check out `origin/master` in each submodule. Note that `my_machine.h` on this branch has `LITTLEFS_ENABLE=2` and `DEFAULT_MACRO_ATC_OPTIONS=2`, both of which rely on PR features — without those PRs applied in the submodule trees, the build either falls back to `LITTLEFS_ENABLE=1` semantics or emits an "unknown define" diagnostic. Adjust `my_machine.h` if you want a plain upstream build.
+
+## Build
+
+```bash
+cd grblHAL_Teensy4
+pio run -e teensy41
+```
+
+You should see `build-stamp: wrote src/build_stamp.h = <date> <time>` in the build log, confirming the pre-build script ran. Resulting `.hex` lands in `.pio/build/teensy41/firmware.hex`.
+
+## The 5 upstream PRs (against `grblHAL/*`)
+
+| # | Repo | Branch (on `stevenrwood`) | Status |
+|---|---|---|---|
+| [#13](https://github.com/grblHAL/Plugin_SD_card/pull/13) | Plugin_SD_card | `fix/reset-during-sd-streaming` | Open |
+| [#14](https://github.com/grblHAL/Plugin_SD_card/pull/14) | Plugin_SD_card | `feat/default-macro-atc-options` | Open |
+| [#966](https://github.com/grblHAL/core/pull/966) | core | `feat/littlefs-ymodem-combined` | Open |
+| [#967](https://github.com/grblHAL/core/pull/967) | core | `feat/build-timestamp-line` | Draft |
+| [#22](https://github.com/grblHAL/Plugin_networking/pull/22) | Plugin_networking | `feat/hostname-boot-info` | Open |
+
+Open `srw/proposedprs.html` for the per-PR summary and "why" notes.
+
+## Driver-local branches on this fork (no upstream PR)
+
+| Branch | Purpose |
+|---|---|
+| `srw/local-build-config` (this one) | Build config + tracker bundle |
+| `pr/littlefs-case-insensitive` | Patches vendored `littlefs/lfs.c` so name lookup is case-insensitive (matches FatFs semantics). Not for upstream — touches third-party vendored code |
+
+## Companion repos
+
+- **Hardware** (PCB, schematics, macros): `https://github.com/stevenrwood/grblHAL-teensy-4.x` — also where the canonical tracker lives.
+- **ioSender** (Windows-only sender): `https://github.com/terjeio/ioSender` — used as the host-side sender on the laptop.

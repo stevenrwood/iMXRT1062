@@ -1,0 +1,76 @@
+{
+  "_comment": "Maps each grblHAL submodule used by iMXRT1062/grblHAL_Teensy4 to its upstream repo, the stevenrwood fork, and the branches pushed (with live PR numbers when filed). Used by setup_forks.sh and proposedprs.html. When you fork additional grblHAL repos, append entries here.",
+  "fork_owner": "stevenrwood",
+  "driver": {
+    "_comment": "The iMXRT1062 driver itself (not a submodule). Forked to carry driver-LOCAL patches that are not suitable as upstream core/plugin PRs - e.g. patches to vendored third-party code. NOT processed by setup_forks.sh (which only walks submodules); add the 'fork' remote manually.",
+    "upstream": "https://github.com/grblHAL/iMXRT1062.git",
+    "fork":     "https://github.com/stevenrwood/iMXRT1062.git",
+    "branches_pushed": [
+      {
+        "branch": "pr/littlefs-case-insensitive",
+        "pr":     null,
+        "url":    null,
+        "status": "driver-local"
+      },
+      {
+        "branch": "srw/local-build-config",
+        "pr":     null,
+        "url":    null,
+        "status": "driver-local"
+      }
+    ]
+  },
+  "submodules": [
+    {
+      "path": "grblHAL_Teensy4/src/grbl",
+      "upstream": "https://github.com/grblHAL/core.git",
+      "fork":     "https://github.com/stevenrwood/core.git",
+      "branches_pushed": [
+        {
+          "branch": "feat/littlefs-ymodem-combined",
+          "pr":     966,
+          "url":    "https://github.com/grblHAL/core/pull/966",
+          "status": "open"
+        },
+        {
+          "branch": "feat/build-timestamp-line",
+          "pr":     967,
+          "url":    "https://github.com/grblHAL/core/pull/967",
+          "status": "draft"
+        }
+      ]
+    },
+    {
+      "path": "grblHAL_Teensy4/src/sdcard",
+      "upstream": "https://github.com/grblHAL/Plugin_SD_card.git",
+      "fork":     "https://github.com/stevenrwood/Plugin_SD_card.git",
+      "branches_pushed": [
+        {
+          "branch": "fix/reset-during-sd-streaming",
+          "pr":     13,
+          "url":    "https://github.com/grblHAL/Plugin_SD_card/pull/13",
+          "status": "open"
+        },
+        {
+          "branch": "feat/default-macro-atc-options",
+          "pr":     14,
+          "url":    "https://github.com/grblHAL/Plugin_SD_card/pull/14",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "path": "grblHAL_Teensy4/src/networking",
+      "upstream": "https://github.com/grblHAL/Plugin_networking.git",
+      "fork":     "https://github.com/stevenrwood/Plugin_networking.git",
+      "branches_pushed": [
+        {
+          "branch": "feat/hostname-boot-info",
+          "pr":     22,
+          "url":    "https://github.com/grblHAL/Plugin_networking/pull/22",
+          "status": "open"
+        }
+      ]
+    }
+  ]
+}
