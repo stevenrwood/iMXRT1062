@@ -37,6 +37,12 @@
           "pr":     967,
           "url":    "https://github.com/grblHAL/core/pull/967",
           "status": "draft"
+        },
+        {
+          "branch": "srw/combined",
+          "pr":     null,
+          "url":    null,
+          "status": "driver-local; = feat/littlefs-ymodem-combined + feat/build-timestamp-line + a driver-local read_command whitespace-skip (O<cal> CALL tolerates the space). This is the grbl overlay the build checks out."
         }
       ]
     },

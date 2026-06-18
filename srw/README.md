@@ -7,7 +7,8 @@ You're on branch `srw/local-build-config` of `stevenrwood/iMXRT1062`, the SRW fo
 | Path | Purpose |
 |---|---|
 | `grblHAL_Teensy4/src/my_machine.h` | BOARD_T41U5XBB config — 17 Web Builder JSON symbols + `LITTLEFS_ENABLE=2` (PR #966) + `DEFAULT_MACRO_ATC_OPTIONS=2` (PR #14) |
-| `grblHAL_Teensy4/platformio.ini` | Adds `extra_scripts = pre:scripts/touch_build_stamp.py` |
+| `grblHAL_Teensy4/platformio.ini` | Adds `extra_scripts = pre:scripts/touch_build_stamp.py` and `-DLFS_CASE_INSENSITIVE` (driver-local littlefs fix) |
+| `grblHAL_Teensy4/src/littlefs/lfs.c` | **Driver-local** (folded in): case-folded name compare gated by `LFS_CASE_INSENSITIVE`, so LittleFS matches FatFs case-insensitivity and `O<name> CALL` resolves regardless of the parser upper-casing the label. Patches vendored code — not an upstream PR |
 | `grblHAL_Teensy4/scripts/touch_build_stamp.py` | Pre-build hook that rewrites `src/build_stamp.h` with the current datetime on every compile. Companion to PR #967 |
 | `.gitignore` | Excludes the generated `src/build_stamp.h` |
 | `srw/` | This directory — tracker + bootstrap files |
@@ -44,10 +45,10 @@ After `setup_forks.sh`, each of `grblHAL_Teensy4/src/{grbl,sdcard,networking}` h
 The branches don't conflict — each PR touches one distinct file — so you can stack them per submodule:
 
 ```bash
-# core: two PRs, stack them on a combined branch
+# core: the two PRs + the driver-local read_command whitespace-skip are pre-combined
+# on the fork, so just check it out (no manual stacking needed)
 cd grblHAL_Teensy4/src/grbl
-git checkout -b srw/combined fork/feat/littlefs-ymodem-combined
-git merge --no-edit fork/feat/build-timestamp-line
+git checkout -b srw/combined fork/srw/combined   # = feat/littlefs-ymodem-combined + feat/build-timestamp-line + whitespace-skip
 
 # sdcard: two PRs, stack them
 cd ../sdcard
@@ -84,10 +85,13 @@ Open `srw/proposedprs.html` for the per-PR summary and "why" notes.
 
 ## Driver-local branches on this fork (no upstream PR)
 
+There are two driver-local fixes; both are now baked into a `srw/local-build-config` build (no extra overlay step for them):
+
 | Branch | Purpose |
 |---|---|
-| `srw/local-build-config` (this one) | Build config + tracker bundle |
-| `pr/littlefs-case-insensitive` | Patches vendored `littlefs/lfs.c` so name lookup is case-insensitive (matches FatFs semantics). Not for upstream — touches third-party vendored code |
+| `srw/local-build-config` (this one) | Build config + tracker bundle. **Now also carries the case-insensitive littlefs fix folded in** (`lfs.c` case-folded compare + `-DLFS_CASE_INSENSITIVE`), so a single clone builds firmware where `O<name> CALL` resolves a lower-case `cal.macro`. |
+| grbl `srw/combined` (on `stevenrwood/core`) | The two core PRs (#966, #967) **plus** a driver-local **whitespace-skip** in `ngc_flowctrl` `read_command`, so `O<cal> CALL` parses with or without the space before the keyword. The whitespace-skip is driver-local — not an upstream PR. Checked out by the grbl overlay step above. |
+| `pr/littlefs-case-insensitive` | The standalone `lfs.c` patch. **Superseded** — now folded into `srw/local-build-config`; kept for reference. |
 
 ## Companion repos
 
