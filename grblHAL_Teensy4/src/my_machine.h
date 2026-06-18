@@ -33,17 +33,17 @@
 //#define BOARD_MY_MACHINE // Add my_machine_map.h before enabling this!
 
 /*
-              Plugin: | ETHERNET¹ | SDCARD¹ | KEYPAD | EEPROM | N_AXIS |
+              Plugin: | ETHERNETï¿½ | SDCARDï¿½ | KEYPAD | EEPROM | N_AXIS |
 ----------------------|-----------|---------|--------|--------|--------|
-BOARD_T40X101         | no        | no      | yes    | yes³   | max 4  |
-BOARD_T41U5XBB        | yes       | yes     | yes    | yes³   | max 5  |
+BOARD_T40X101         | no        | no      | yes    | yesï¿½   | max 4  |
+BOARD_T41U5XBB        | yes       | yes     | yes    | yesï¿½   | max 5  |
 BOARD_T41BB5X_PRO     | yes       | yes     | yes    | yes    | max 5  |
-BOARD_CNC_BOOSTERPACK | yes²      | yes     | yes    | yes    | max 3  |
+BOARD_CNC_BOOSTERPACK | yesï¿½      | yes     | yes    | yes    | max 3  |
 BOARD_GRBLHAL2000     | yes       | yes     | yes    | yes    | max 5  |
 
-¹ Teensy 4.1 only
-² External magjack.
-³ EEPROM is optional and must be added to the board.
+ï¿½ Teensy 4.1 only
+ï¿½ External magjack.
+ï¿½ EEPROM is optional and must be added to the board.
 
 N_AXIS has a default value of 3, edit grbl\config.h to increase.
 
@@ -51,6 +51,33 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 
 // Configuration
 // Uncomment to enable, for some a value > 1 may be assigned, if so the default value is shown.
+
+// =========================================================================
+// SRW local build config â€” mirrors the Web Builder JSON for BOARD_T41U5XBB
+// (kept under grblHAL-teensy-4.x/macros/iMXRT1062_T41U5XBB.json). Remove or
+// stash this block before sending PRs upstream.
+// =========================================================================
+#define BOARD_T41U5XBB
+#define USB_SERIAL_CDC                  1
+#define Y_GANGED                        1
+#define PROBE_ENABLE                    1
+#define SPINDLE0_ENABLE                 11
+#define SDCARD_ENABLE                   1
+#define LITTLEFS_ENABLE                 2 // Mount LittleFS as root if SD card is not present, enables YMODEM upload via LittleFS when SD card is present. upload via LittleFS when SD card is present. 
+#define BLUETOOTH_ENABLE                2
+#define ODOMETER_ENABLE                 1
+#define ETHERNET_ENABLE                 1
+#define TELNET_ENABLE                   1
+#define WEBSOCKET_ENABLE                1
+#define FTP_ENABLE                      1
+#define MDNS_ENABLE                     1
+#define N_TOOLS                         8
+#define ACCELERATION_TICKS_PER_SECOND   100
+#define NGC_EXPRESSIONS_ENABLE          1
+#define TOOLSETTER_ENABLE               1
+#define CONTROL_ENABLE                  0
+#define DEFAULT_MACRO_ATC_OPTIONS       2   // $675=2: report ATC=0/1 in $I, fail M6 if tc.macro missing
+// =========================================================================
 
 #ifndef USB_SERIAL_CDC
 #define USB_SERIAL_CDC          2 // 1 for Arduino class library and 2 for PJRC C library. Comment out or set to 0 to use UART communication.
@@ -74,7 +101,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 //#define WEBUI_ENABLE            3 // Enable ESP3D-WEBUI plugin along with networking and SD card plugins.
 //#define ETHERNET_ENABLE         1 // Ethernet streaming. Enables networking plugin.
 //#define SDCARD_ENABLE           1 // Run gcode programs from SD card. Set to 2 to enable YModem upload.
-//#define LITTLEFS_ENABLE         1 // Enable flash based storage, automatically enabled if WebUI is enabled. Set to 2 to mount as root.
+//#define LITTLEFS_ENABLE         1 // Enable flash based storage, automatically enabled if WebUI is enabled. Set to 2 to also enable YModem upload (and mount as root if SDCARD is not also enabled).
 //#define ENCODER_ENABLE          1 // Enable encoder plugin and quadrature encoder interface. Set to to 2 if select input is not required or available.
 //#define MPG_ENABLE              1 // Enable MPG interface. Requires a serial stream and means to switch between normal and MPG mode.
                                     // 1: Mode switching is by handshake pin.
