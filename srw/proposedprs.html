@@ -22,6 +22,9 @@
   .status.draft { background: #f0c040; color: white; }
   .status.ready { background: #28a745; color: white; }
   .status.local { background: #6a737d; color: white; }
+  .status.withdrawn { background: #b08800; color: white; }
+  .consume { border: 1px solid #d0d7de; border-left: 4px solid #0366d6; border-radius: 6px; background: #f6f8fa; padding: 0.8em 1.2em; margin: 1.2em 0 1.8em; font-size: 0.92em; }
+  .consume ul { margin: 0.5em 0 0.5em 0; }
   .section-divider { font-size: 1.05em; color: #444; border-top: 1px solid #eee; padding-top: 1em; margin-top: 2em; }
   .section-divider span { font-weight: 400; font-size: 0.85em; color: #888; }
   footer { margin-top: 3em; color: #777; font-size: 0.85em; border-top: 1px solid #eee; padding-top: 1em; }
@@ -29,11 +32,24 @@
 </head>
 <body>
 
-<h1>grblHAL — Proposed Upstream PRs</h1>
-<p class="subtitle">PRs filed against <code>grblHAL/*</code> from branches on <code>stevenrwood</code>'s forks. Click the PR# button on a card to jump to the live review.</p>
+<h1>grblHAL Teensy 4.x — Fork Changes</h1>
+<p class="subtitle">Changes carried on <code>stevenrwood</code>'s grblHAL forks for the iMXRT1062 (Teensy 4.1) build. Each card was originally proposed upstream; as of <strong>2026-06-18 those PRs are withdrawn</strong>, and every change is now staged as a same-repo PR on the fork (base = the fork's own <code>master</code>) for review and cherry-pick.</p>
+
+<div class="consume">
+  <strong>How to consume these changes</strong>
+  <ul>
+    <li><strong>Use the whole set as-is</strong> — <code>git clone -b srw/local-build-config https://github.com/stevenrwood/iMXRT1062</code>, run <code>./srw/setup_forks.sh .</code>, overlay <code>srw/combined</code> per <code>srw/README.md</code>, and build.</li>
+    <li><strong>Cherry-pick one</strong> — each change is a single-purpose branch (see its card and <code>firmware-forks.json</code>); <code>git cherry-pick</code> it onto your own fork.</li>
+    <li><strong>Submit one upstream</strong> — open a PR to the matching <code>grblHAL/*</code> repo from the branch (or reopen the withdrawn PR).</li>
+  </ul>
+  <p>Reviewable fork PRs:
+  core <a href="https://github.com/stevenrwood/core/pull/1">#1</a> · <a href="https://github.com/stevenrwood/core/pull/2">#2</a> · <a href="https://github.com/stevenrwood/core/pull/3">#3</a> · <a href="https://github.com/stevenrwood/core/pull/4">#4</a> &nbsp;|&nbsp;
+  Plugin_SD_card <a href="https://github.com/stevenrwood/Plugin_SD_card/pull/1">#1</a> · <a href="https://github.com/stevenrwood/Plugin_SD_card/pull/2">#2</a> &nbsp;|&nbsp;
+  Plugin_networking <a href="https://github.com/stevenrwood/Plugin_networking/pull/1">#1</a></p>
+</div>
 
 <div class="pr">
-  <h2>1. Fix grblHAL hang when soft-reset arrives during $F= SD streaming <span class="status ready">Open #13</span></h2>
+  <h2>1. Fix grblHAL hang when soft-reset arrives during $F= SD streaming <span class="status withdrawn">Withdrawn — fork PR #1</span></h2>
   <div class="meta">
     Repo: <code>grblHAL/Plugin_SD_card</code> &nbsp; · &nbsp;
     Branch: <code>stevenrwood:fix/reset-during-sd-streaming</code> &nbsp; · &nbsp;
@@ -51,7 +67,7 @@
 </div>
 
 <div class="pr">
-  <h2>2. Add <code>DEFAULT_MACRO_ATC_OPTIONS</code> build-time default for $675 <span class="status ready">Open #14</span></h2>
+  <h2>2. Add <code>DEFAULT_MACRO_ATC_OPTIONS</code> build-time default for $675 <span class="status withdrawn">Withdrawn — fork PR #2</span></h2>
   <div class="meta">
     Repo: <code>grblHAL/Plugin_SD_card</code> &nbsp; · &nbsp;
     Branch: <code>stevenrwood:feat/default-macro-atc-options</code> &nbsp; · &nbsp;
@@ -69,7 +85,7 @@
 </div>
 
 <div class="pr">
-  <h2>3. Honor <code>LITTLEFS_ENABLE=2</code> as YMODEM request even when SDCARD is enabled <span class="status ready">Open #966</span></h2>
+  <h2>3. Honor <code>LITTLEFS_ENABLE=2</code> as YMODEM request even when SDCARD is enabled <span class="status withdrawn">Withdrawn — fork PR #1</span></h2>
   <div class="meta">
     Repo: <code>grblHAL/core</code> &nbsp; · &nbsp;
     Branch: <code>stevenrwood:feat/littlefs-ymodem-combined</code> &nbsp; · &nbsp;
@@ -87,7 +103,7 @@
 </div>
 
 <div class="pr">
-  <h2>4. Add <code>[BUILD:...]</code> line to <code>$I</code> from generated <code>build_stamp.h</code> <span class="status draft">Draft #967</span></h2>
+  <h2>4. Add <code>[BUILD:...]</code> line to <code>$I</code> from generated <code>build_stamp.h</code> <span class="status withdrawn">Withdrawn — fork PR #2</span></h2>
   <div class="meta">
     Repo: <code>grblHAL/core</code> &nbsp; · &nbsp;
     Branch: <code>stevenrwood:feat/build-timestamp-line</code> &nbsp; · &nbsp;
@@ -105,7 +121,7 @@
 </div>
 
 <div class="pr">
-  <h2>5. Report mDNS hostname in <code>$I</code> boot info <span class="status ready">Open #22</span></h2>
+  <h2>5. Report mDNS hostname in <code>$I</code> boot info <span class="status withdrawn">Withdrawn — fork PR #1</span></h2>
   <div class="meta">
     Repo: <code>grblHAL/Plugin_networking</code> &nbsp; · &nbsp;
     Branch: <code>stevenrwood:feat/hostname-boot-info</code> &nbsp; · &nbsp;
@@ -159,18 +175,38 @@
 </div>
 
 <div class="pr">
-  <h2>Flow-control whitespace tolerance (<code>O&lt;cal&gt; CALL</code>) <span class="status local">Driver-local</span></h2>
+  <h2>Flow-control whitespace tolerance (<code>O&lt;cal&gt; CALL</code>) <span class="status local">Driver-local — fork PR #4</span></h2>
   <div class="meta">
     Repo: <code>stevenrwood/core</code> &nbsp; · &nbsp;
-    Branch: <code>srw/combined</code> (= the two core PRs + this) &nbsp; · &nbsp;
+    Branch: <code>fix/ngc-flowctrl-whitespace</code> (also in the <code>srw/combined</code> overlay) &nbsp; · &nbsp;
     Files: <span class="files">ngc_flowctrl.c</span>
   </div>
   <div class="summary">
-    grblHAL keeps interior spaces in a block (<code>gc_normalize_block</code> strips only leading whitespace), so <code>O&lt;cal&gt; CALL</code> reaches <code>read_command</code> with the gap intact and the keyword read lands on the space → <code>error:81 Unknown flow statement</code>. Skip leading spaces/tabs before reading the flow keyword so an O-word call parses with or without the gap — hand-typed at the MDI, sent by a sender that doesn't close it up, or read from a file. (Pairs with the case-insensitive littlefs fix: together they make <code>O&lt;cal&gt; CALL</code> resolve <code>cal.macro</code> from any sender.)
+    grblHAL keeps interior spaces in a block (<code>gc_normalize_block</code> strips only leading whitespace), so <code>O&lt;cal&gt; CALL</code> reaches <code>read_command</code> with the gap intact and the keyword read lands on the space → <code>error:81 Unknown flow statement</code>. Skip leading spaces/tabs before reading the flow keyword so an O-word call parses with or without the gap — hand-typed at the MDI, sent by a sender that doesn't close it up, or read from a file.
   </div>
-  <div class="why">Kept driver-local (rides in the grbl <code>srw/combined</code> overlay) rather than filed as an upstream PR. It's a small, defensible core change and could be upstreamed later if wanted.</div>
+  <div class="why">Driver-local core change, not previously filed upstream. Small and defensible; could be upstreamed later (open a PR to <code>grblHAL/core</code> from this branch).</div>
   <div class="actions">
-    <a class="secondary" href="https://github.com/stevenrwood/core/tree/srw/combined">Browse srw/combined</a>
+    <a href="https://github.com/stevenrwood/core/pull/4">Fork PR #4</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/compare/master...fix/ngc-flowctrl-whitespace">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/tree/fix/ngc-flowctrl-whitespace">Browse branch</a>
+  </div>
+</div>
+
+<div class="pr">
+  <h2>O&lt;name&gt; CALL macro search path for <code>LITTLEFS_ENABLE=2</code> <span class="status local">Driver-local — fork PR #3</span></h2>
+  <div class="meta">
+    Repo: <code>stevenrwood/core</code> &nbsp; · &nbsp;
+    Branch: <code>fix/littlefs-macro-search-path</code> (also in the <code>srw/combined</code> overlay) &nbsp; · &nbsp;
+    Files: <span class="files">ngc_flowctrl.c</span>
+  </div>
+  <div class="summary">
+    The named-sub CALL handler searched <code>/littlefs</code> only under <code>#if LITTLEFS_ENABLE == 1</code>. With <code>LITTLEFS_ENABLE=2</code> (YModem) and an SD card present (LittleFS at <code>/littlefs</code>, root = SD), it searched root only, so <code>O&lt;cal&gt; CALL</code> never found <code>/littlefs/cal.macro</code> — the open failure was then masked as <code>error:81</code>. Gate the <code>/littlefs</code>-then-root search on <code>#if LITTLEFS_ENABLE</code> (1 or 2). This was the actual root cause of the long <code>O&lt;cal&gt; CALL</code> saga (whitespace + case were red herrings on top of it).
+  </div>
+  <div class="why">Driver-local core change, not previously filed upstream — a genuine bug in the <code>LITTLEFS_ENABLE=2</code> path from the littlefs-ymodem work (fork PR #1). Could be folded into that branch or upstreamed on its own.</div>
+  <div class="actions">
+    <a href="https://github.com/stevenrwood/core/pull/3">Fork PR #3</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/compare/master...fix/littlefs-macro-search-path">View diff</a>
+    <a class="secondary" href="https://github.com/stevenrwood/core/tree/fix/littlefs-macro-search-path">Browse branch</a>
   </div>
 </div>
 
