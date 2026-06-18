@@ -8,6 +8,15 @@ This driver can be built with the [Web Builder](http://svn.io-engineering.com:80
 
 ---
 
+#### This fork — build config + proposed PRs
+
+This is the [`stevenrwood/iMXRT1062`](https://github.com/stevenrwood/iMXRT1062) fork. The default branch (`srw/local-build-config`) carries the SRW build configuration plus a tracker for the in-flight upstream PRs (the actual PR branches live in the `grbl`/`sdcard`/`networking` submodules):
+
+- **[`srw/README.md`](srw/README.md)** — fresh-machine bootstrap: clone, init submodules, check out the PR branches per submodule, and build.
+- **[`srw/proposedprs.pdf`](srw/proposedprs.pdf)** (or the [HTML source](srw/proposedprs.html)) — the per-PR tracker: each proposed upstream PR with its repo, branch, status, and "why" notes, plus the driver-local fixes.
+
+---
+
 __Important!__ There is a "bug" in Teensyduino prior to v1.54 that may cause [periodic stalls](https://github.com/grblHAL/iMXRT1062/issues/6) in processing.
 It is possible that this is only happening when networking is enabled and then not always so.  
 Regardless of whether networking is enabled or not it is recommended that [Teensyduino v1.54](https://www.pjrc.com/teensy/td_download.html) is used to build this driver.
