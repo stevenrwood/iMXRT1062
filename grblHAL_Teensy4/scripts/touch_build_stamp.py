@@ -47,9 +47,19 @@ proj = pathlib.Path(env.subst("$PROJECT_DIR"))            # grblHAL_Teensy4
 stamp_h = proj / "src" / "build_stamp.h"
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-drv = "{}@{}".format(git("rev-parse", "--abbrev-ref", "HEAD", cwd=proj),
-                     git("rev-parse", "--short", "HEAD", cwd=proj))
-grbl = git("describe", "--all", "--always", "--dirty", cwd=proj / "src" / "grbl")
+def ref(cwd):
+    # "<branch-or-tag>@<short-sha>" (+ "-dirty"), so the BUILD line distinguishes
+    # commits, not just branch names. Submodules are usually detached HEAD, so the
+    # name comes from `git describe --all` (heads/<branch> at a tip, else a tag/sha);
+    # strip the heads/remotes prefix and append the short sha. If describe already
+    # resolved to the sha (detached, no ref), don't repeat it.
+    name = git("describe", "--all", "--always", "--dirty", cwd=cwd).replace("heads/", "").replace("remotes/", "")
+    sha = git("rev-parse", "--short", "HEAD", cwd=cwd)
+    return name if (sha == "?" or sha in name) else "{}@{}".format(name, sha)
+
+
+drv = ref(proj)
+grbl = ref(proj / "src" / "grbl")
 
 stamp = "{} drv:{} grbl:{}".format(now, drv, grbl)
 
