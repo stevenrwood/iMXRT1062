@@ -19,10 +19,11 @@ You're on branch `srw/local-build-config` of `stevenrwood/iMXRT1062`, the SRW fo
 |---|---|
 | `firmware-forks.json` | Maps each grblHAL submodule to its `stevenrwood` fork URL and lists branches pushed (with live PR numbers and status) |
 | `proposedprs.html` | Human-readable summary of the 5 upstream PRs + the 2 driver-local branches. Open in a browser |
+| `proposedprs.pdf` | Rendered `proposedprs.html` — views inline on GitHub (this fork's website link points here) |
 | `setup_forks.sh` | One-shot script that configures a `fork` remote on each submodule from the JSON manifest |
 | `README.md` | This file |
 
-The canonical copies of these tracker files live in `https://github.com/stevenrwood/grblHAL-teensy-4.x` at the repo root. The copies here are convenience snapshots so the laptop can bootstrap from a single clone of the driver fork. If you update one set, sync the other.
+These tracker files are the **canonical** copies — this driver fork is where they are actually used (`setup_forks.sh` runs against the submodules here, and you bootstrap a build from a single clone of this repo). `proposedprs.pdf` is a rendered copy of `proposedprs.html` for inline viewing on GitHub. The hardware repo (`stevenrwood/grblHAL-teensy-4.x`) just links here rather than keeping its own copy.
 
 ## Fresh-machine bootstrap
 
@@ -95,5 +96,5 @@ There are two driver-local fixes; both are now baked into a `srw/local-build-con
 
 ## Companion repos
 
-- **Hardware** (PCB, schematics, macros): `https://github.com/stevenrwood/grblHAL-teensy-4.x` — also where the canonical tracker lives.
+- **Hardware** (PCB, schematics, macros): `https://github.com/stevenrwood/grblHAL-teensy-4.x` — it links back to this `srw/` tracker rather than keeping its own copy.
 - **ioSender** (Windows-only sender): `https://github.com/terjeio/ioSender` — used as the host-side sender on the laptop.
