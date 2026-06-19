@@ -23,7 +23,7 @@ You're on branch `srw/local-build-config` of `stevenrwood/iMXRT1062`, the SRW fo
 | `setup_forks.sh` | One-shot script that configures a `fork` remote on each submodule from the JSON manifest |
 | `README.md` | This file |
 
-These tracker files are the **canonical** copies — this driver fork is where they are actually used (`setup_forks.sh` runs against the submodules here, and you bootstrap a build from a single clone of this repo). `proposedprs.pdf` is a rendered copy of `proposedprs.html` for inline viewing on GitHub. The hardware repo (`stevenrwood/grblHAL-teensy-4.x`) just links here rather than keeping its own copy.
+These tracker files are the **canonical** copies — this driver fork is where they are actually used (`setup_forks.sh` runs against the submodules here, and you bootstrap a build from a single clone of this repo). `proposedprs.pdf` is a rendered copy of `proposedprs.html` for inline viewing on GitHub.
 
 ## Fresh-machine bootstrap
 
@@ -96,5 +96,5 @@ There are two driver-local fixes; both are now baked into a `srw/local-build-con
 
 ## Companion repos
 
-- **Hardware** (PCB, schematics, macros): `https://github.com/stevenrwood/grblHAL-teensy-4.x` — it links back to this `srw/` tracker rather than keeping its own copy.
+- **Hardware** (PCB, schematics): `https://github.com/phil-barrett/grblHAL-teensy-4.x` — the upstream Teensy 4.x breakout-board design this driver targets.
 - **ioSender** (Windows-only sender): `https://github.com/terjeio/ioSender` — used as the host-side sender on the laptop.
