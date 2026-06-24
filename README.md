@@ -13,7 +13,7 @@ This driver can be built with the [Web Builder](http://svn.io-engineering.com:80
 This is the [`stevenrwood/iMXRT1062`](https://github.com/stevenrwood/iMXRT1062) fork. The default branch (`srw/local-build-config`) carries the SRW build configuration plus a tracker for the in-flight upstream PRs (the actual PR branches live in the `grbl`/`sdcard`/`networking` submodules):
 
 - **[`srw/README.md`](srw/README.md)** — fresh-machine bootstrap: clone, init submodules, check out the PR branches per submodule, and build.
-- **[`srw/proposedprs.pdf`](srw/proposedprs.pdf)** (or the [HTML source](srw/proposedprs.html)) — the per-PR tracker: each proposed upstream PR with its repo, branch, status, and "why" notes, plus the driver-local fixes.
+- **[`srw/ProposedPRs.pdf`](srw/ProposedPRs.pdf)** (or the [HTML source](srw/ProposedPRs.html)) — the per-PR tracker: each proposed upstream PR with its repo, branch, status, and "why" notes, plus the driver-local fixes.
 
 ---
 

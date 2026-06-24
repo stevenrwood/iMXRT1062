@@ -1,5 +1,5 @@
 {
-  "_comment": "Maps each grblHAL submodule used by iMXRT1062/grblHAL_Teensy4 to its upstream repo, the stevenrwood fork, and the branches pushed. The upstream PRs were WITHDRAWN (2026-06-18) and each change is now staged as a same-repo PR on the fork (fork_pr) for review/cherry-pick - see proposedprs.html 'How to consume'. Used by setup_forks.sh + proposedprs.html. upstream_pr = the (now closed) grblHAL PR; fork_pr = the showcase PR on the fork.",
+  "_comment": "Maps each grblHAL submodule used by iMXRT1062/grblHAL_Teensy4 to its upstream repo, the stevenrwood fork, and the branches pushed. The upstream PRs were WITHDRAWN (2026-06-18) and each change is now staged as a same-repo PR on the fork (fork_pr) for review/cherry-pick - see ProposedPRs.html 'How to consume'. Used by setup_forks.sh + ProposedPRs.html. upstream_pr = the (now closed) grblHAL PR; fork_pr = the showcase PR on the fork.",
   "fork_owner": "stevenrwood",
   "driver": {
     "_comment": "The iMXRT1062 driver itself (not a submodule). Forked to carry driver-LOCAL patches (e.g. patches to vendored third-party code) and the build config. NOT processed by setup_forks.sh; add the 'fork' remote manually.",

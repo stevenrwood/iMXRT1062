@@ -18,12 +18,12 @@ You're on branch `srw/local-build-config` of `stevenrwood/iMXRT1062`, the SRW fo
 | File | Purpose |
 |---|---|
 | `firmware-forks.json` | Maps each grblHAL submodule to its `stevenrwood` fork URL and lists branches pushed (with live PR numbers and status) |
-| `proposedprs.html` | Human-readable summary of the 5 upstream PRs + the 2 driver-local branches. Open in a browser |
-| `proposedprs.pdf` | Rendered `proposedprs.html` — views inline on GitHub (this fork's website link points here) |
+| `ProposedPRs.html` | Human-readable summary of the 5 upstream PRs + the 2 driver-local branches. Open in a browser |
+| `ProposedPRs.pdf` | Rendered `ProposedPRs.html` — views inline on GitHub (this fork's website link points here) |
 | `setup_forks.sh` | One-shot script that configures a `fork` remote on each submodule from the JSON manifest |
 | `README.md` | This file |
 
-These tracker files are the **canonical** copies — this driver fork is where they are actually used (`setup_forks.sh` runs against the submodules here, and you bootstrap a build from a single clone of this repo). `proposedprs.pdf` is a rendered copy of `proposedprs.html` for inline viewing on GitHub.
+These tracker files are the **canonical** copies — this driver fork is where they are actually used (`setup_forks.sh` runs against the submodules here, and you bootstrap a build from a single clone of this repo). `ProposedPRs.pdf` is a rendered copy of `ProposedPRs.html` for inline viewing on GitHub.
 
 ## Fresh-machine bootstrap
 
@@ -82,7 +82,7 @@ You should see `build-stamp: wrote src/build_stamp.h = <date> <time>` in the bui
 | [#967](https://github.com/grblHAL/core/pull/967) | core | `feat/build-timestamp-line` | Draft |
 | [#22](https://github.com/grblHAL/Plugin_networking/pull/22) | Plugin_networking | `feat/hostname-boot-info` | Open |
 
-Open `srw/proposedprs.html` for the per-PR summary and "why" notes.
+Open `srw/ProposedPRs.html` for the per-PR summary and "why" notes.
 
 ## Driver-local branches on this fork (no upstream PR)
 

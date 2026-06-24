@@ -111,4 +111,4 @@ echo "  # make your changes, commit"
 echo "  git push -u fork <branch-name>"
 echo
 echo "Then add an entry to firmware-forks.json under the matching submodule's"
-echo "'branches_pushed' list and append a new card to proposedprs.html."
+echo "'branches_pushed' list and append a new card to ProposedPRs.html."
