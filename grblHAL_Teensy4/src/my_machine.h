@@ -60,7 +60,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 #define BOARD_T41U5XBB
 #define USB_SERIAL_CDC                  1
 #define Y_GANGED                        1
-#define Y_AUTO_SQUARE                   1
+//#define Y_AUTO_SQUARE                 1  // disabled: rigid gantry binds on the squaring pass; Y motors run slaved, squared mechanically (co-datumed rails)
 #define PROBE_ENABLE                    1
 #define SPINDLE0_ENABLE                 11
 #define SDCARD_ENABLE                   1
