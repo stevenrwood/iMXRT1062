@@ -60,6 +60,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 #define BOARD_T41U5XBB
 #define USB_SERIAL_CDC                  1
 #define Y_GANGED                        1
+#define Y_AUTO_SQUARE                   1
 #define PROBE_ENABLE                    1
 #define SPINDLE0_ENABLE                 11
 #define SDCARD_ENABLE                   1
@@ -71,7 +72,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 #define WEBSOCKET_ENABLE                1
 #define FTP_ENABLE                      1
 #define MDNS_ENABLE                     1
-#define N_TOOLS                         8
+#define N_TOOLS                         0
 #define ACCELERATION_TICKS_PER_SECOND   100
 #define NGC_EXPRESSIONS_ENABLE          1
 #define TOOLSETTER_ENABLE               1
