@@ -78,6 +78,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 #define TOOLSETTER_ENABLE               1
 #define CONTROL_ENABLE                  0
 #define DEFAULT_MACRO_ATC_OPTIONS       2   // $675=2: report ATC=0/1 in $I, fail M6 if tc.macro missing
+#define ROTATION_ENABLE                     // coordinate-system rotation: G68/G69 and G10 L2 P.. R<deg> (work-frame skew). Used by Load Stock to align programs to skewed stock.
 // =========================================================================
 
 #ifndef USB_SERIAL_CDC
