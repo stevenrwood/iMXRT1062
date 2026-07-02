@@ -1,6 +1,6 @@
 [submodule "grblHAL_Teensy4/src/grbl"]
 	path = grblHAL_Teensy4/src/grbl
-	url = https://github.com/grblHAL/core
+	url = https://github.com/stevenrwood/core.git
 [submodule "grblHAL_Teensy4/src/eeprom"]
 	path = grblHAL_Teensy4/src/eeprom
 	url = https://github.com/grblHAL/Plugin_EEPROM
@@ -9,10 +9,10 @@
 	url = https://github.com/grblHAL/Plugin_I2C_keypad
 [submodule "grblHAL_Teensy4/src/networking"]
 	path = grblHAL_Teensy4/src/networking
-	url = https://github.com/grblHAL/Plugin_networking
+	url = https://github.com/stevenrwood/Plugin_networking.git
 [submodule "grblHAL_Teensy4/src/sdcard"]
 	path = grblHAL_Teensy4/src/sdcard
-	url = https://github.com/grblHAL/Plugin_SD_card
+	url = https://github.com/stevenrwood/Plugin_SD_card.git
 [submodule "grblHAL_Teensy4/src/spindle"]
 	path = grblHAL_Teensy4/src/spindle
 	url = https://github.com/grblHAL/Plugins_spindle

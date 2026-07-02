@@ -1,0 +1,79 @@
+# Build grblHAL firmware for the Teensy 4.x (iMXRT1062) driver on GitHub's runners.
+#
+# Produces a firmware.hex artifact you can download and flash. Runs on push to the build branch and on
+# manual dispatch (with an option to inject extra -D build flags).
+#
+# SUBMODULES: .gitmodules points grbl / networking / sdcard at your forks and the superproject pins those
+# fork commits, so `submodules: recursive` below checks out exactly what you build locally:
+#   grbl        -> stevenrwood/core               srw/combined  (core fixes: G53 rotation guard, WCSROT, ...)
+#   networking  -> stevenrwood/Plugin_networking  feat/hostname-boot-info
+#   sdcard      -> stevenrwood/Plugin_SD_card     srw/combined
+# The remaining submodules come from grblHAL upstream at their pinned commits.
+
+name: Build firmware (Teensy 4.x)
+
+on:
+  push:
+    branches: [ srw/local-build-config ]
+    paths:
+      - 'grblHAL_Teensy4/**'
+      - '.github/workflows/firmware.yml'
+  workflow_dispatch:
+    inputs:
+      env:
+        description: PlatformIO environment
+        type: choice
+        options: [ teensy41, teensy40 ]
+        default: teensy41
+      extra_defines:
+        description: 'Extra -D flags, space-separated (e.g. "-DKINEMATICS_API=1"). NOTE: do NOT redefine a symbol my_machine.h already sets - that is a redefinition. For feature changes, edit/generate my_machine.h instead.'
+        type: string
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (submodules at the superproject pins)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      # The firmware configuration lives in grblHAL_Teensy4/src/my_machine.h (committed), so this builds THAT
+      # config. To vary features per run: (recommended) add a step here that writes my_machine.h from your
+      # inputs - see the commented example below - or pass NEW symbols via the extra_defines input.
+      #
+      # - name: Generate my_machine.h (optional, replaces the committed one)
+      #   run: |
+      #     {
+      #       echo '#define BOARD_T41U5XBB'
+      #       echo '#define USB_SERIAL_CDC 1'
+      #       echo '#define PROBE_ENABLE 1'
+      #       echo '#define SDCARD_ENABLE 1'
+      #       echo '#define LITTLEFS_ENABLE 2'
+      #       # ...add the rest of your defines / drive them from workflow inputs...
+      #     } > grblHAL_Teensy4/src/my_machine.h
+
+      - name: Build
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ inputs.extra_defines }}
+        run: pio run -d grblHAL_Teensy4 -e ${{ inputs.env || 'teensy41' }}
+
+      - name: Stage the .hex with the env + short SHA
+        run: |
+          E="${{ inputs.env || 'teensy41' }}"
+          cp "grblHAL_Teensy4/.pio/build/$E/firmware.hex" "firmware-$E-${GITHUB_SHA::7}.hex"
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ inputs.env || 'teensy41' }}
+          path: firmware-*.hex
+          if-no-files-found: error
