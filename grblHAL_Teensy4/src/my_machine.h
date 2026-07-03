@@ -156,7 +156,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 //#define PROBE2_ENABLE           1 // Enable second regular probe input, depending on the board the input assigned may be predefined.
 //#define TOOLSETTER_ENABLE       1 // Enable toolsetter input, depending on the board the input assigned may be predefined.
 //#define SAFETY_DOOR_ENABLE      1
-//#define MOTOR_FAULT_ENABLE      1
+#define MOTOR_FAULT_ENABLE      1   // integrated-stepper ALM -> AUXINPUT0 (pin 36 / ST0); raises Alarm:17. Gate with $744/$745.
 //#define MOTOR_WARNING_ENABLE    1
 //#define PROBE_DISCONNECT_ENABLE 1
 //#define STOP_DISABLE_ENABLE     1
