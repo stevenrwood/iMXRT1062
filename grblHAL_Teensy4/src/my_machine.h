@@ -60,7 +60,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 #define BOARD_T41U5XBB
 #define USB_SERIAL_CDC                  1
 #define Y_GANGED                        1
-//#define Y_AUTO_SQUARE                 1  // disabled: rigid gantry binds on the squaring pass; Y motors run slaved, squared mechanically (co-datumed rails)
+#define Y_AUTO_SQUARE                 1  // re-enabled 2026-07-03: the earlier squaring bind was a loose Y pinion set screw (now fixed), not inherent gantry rigidity. Needs Y2's own limit switch + a tuned $171 offset; $347/$348/$349 bound the fail distance.
 #define PROBE_ENABLE                    1
 #define SPINDLE0_ENABLE                 11
 #define SDCARD_ENABLE                   1
@@ -108,7 +108,7 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 //#define MPG_ENABLE              1 // Enable MPG interface. Requires a serial stream and means to switch between normal and MPG mode.
                                     // 1: Mode switching is by handshake pin.
                                     // 2: Mode switching is by the CMD_MPG_MODE_TOGGLE (0x8B) command character.
-//#define KEYPAD_ENABLE           1 // 1: uses a I2C keypad for input.
+#define KEYPAD_ENABLE           1 // 1: uses a I2C keypad for input. Also registers the $50-$55 jog settings (step/slow/fast distance + speed) so ioSender's App jog config can mirror to firmware (HasFirmwareJog).
                                     // 2: uses a serial stream for input. If MPG_ENABLE is set > 0 the serial stream is shared with the MPG.
 //#define DISPLAY_ENABLE          9 // Set to 9 for I2C display protocol, 17 for I2C LED protocol.
 //#define MACROS_ENABLE           1 // Macros plugin. For macros that can be triggered by keypad plugin or auxiliary inputs.
