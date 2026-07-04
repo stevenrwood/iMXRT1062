@@ -108,8 +108,10 @@ N_AXIS has a default value of 3, edit grbl\config.h to increase.
 //#define MPG_ENABLE              1 // Enable MPG interface. Requires a serial stream and means to switch between normal and MPG mode.
                                     // 1: Mode switching is by handshake pin.
                                     // 2: Mode switching is by the CMD_MPG_MODE_TOGGLE (0x8B) command character.
-#define KEYPAD_ENABLE           1 // 1: uses a I2C keypad for input. Also registers the $50-$55 jog settings (step/slow/fast distance + speed) so ioSender's App jog config can mirror to firmware (HasFirmwareJog).
-#define I2C_STROBE_ENABLE       1 // Required for KEYPAD_ENABLE=1: the keypad plugin only registers $50-$55 if it can claim the I2C strobe IRQ (strobe on AUXINPUT4, T41U5XBB). Harmless with no keypad attached.
+//#define KEYPAD_ENABLE         1 // 1: I2C keypad, 2: UART keypad. NOT enabled: the one spare UART (UART1) is
+                                  // used by BLUETOOTH_ENABLE=2 (HC-05 wireless-grbl link), so a UART keypad would
+                                  // conflict; and there's no I2C keypad. $50-$55 (keypad-plugin jog settings) are
+                                  // therefore unavailable - not needed, ioSender's App jog config is authoritative.
                                     // 2: uses a serial stream for input. If MPG_ENABLE is set > 0 the serial stream is shared with the MPG.
 //#define DISPLAY_ENABLE          9 // Set to 9 for I2C display protocol, 17 for I2C LED protocol.
 //#define MACROS_ENABLE           1 // Macros plugin. For macros that can be triggered by keypad plugin or auxiliary inputs.
