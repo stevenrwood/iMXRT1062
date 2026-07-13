@@ -39,7 +39,7 @@ extern "C" {
 #define BLOCK_RX_BUFFER_SIZE 20
 
 DMAMEM static stream_block_tx_buffer_t txbuf;
-DMAMEM static stream_rx_buffer_t rxbuf;
+DMAMEM static stream_rx_linebuffer_t rxbuf;
 static on_execute_realtime_ptr on_execute_realtime;
 static enqueue_realtime_command_ptr enqueue_realtime_command = protocol_enqueue_realtime_command;
 
@@ -53,9 +53,7 @@ static bool usb_isConnected (void)
 //
 static uint16_t usb_serialRxCount (void)
 {
-    uint_fast16_t tail = rxbuf.tail, head = rxbuf.head;
-
-    return (uint16_t)BUFCOUNT(head, tail, RX_BUFFER_SIZE);
+    return stream_rx_linebuffer_count(&rxbuf);
 }
 
 //
@@ -63,9 +61,7 @@ static uint16_t usb_serialRxCount (void)
 //
 static uint16_t usb_serialRxFree (void)
 {
-    uint_fast16_t tail = rxbuf.tail, head = rxbuf.head;
-
-    return (uint16_t)((RX_BUFFER_SIZE - 1) - BUFCOUNT(head, tail, RX_BUFFER_SIZE));
+    return stream_rx_linebuffer_free(&rxbuf);
 }
 
 //
@@ -74,7 +70,7 @@ static uint16_t usb_serialRxFree (void)
 void usb_serialRxFlush (void)
 {
     SerialUSB.flush();
-    rxbuf.tail = rxbuf.head;
+    stream_rx_linebuffer_flush(&rxbuf);
 }
 
 //
@@ -82,9 +78,7 @@ void usb_serialRxFlush (void)
 //
 static void usb_serialRxCancel (void)
 {
-    rxbuf.data[rxbuf.head] = CMD_RESET;
-    rxbuf.tail = rxbuf.head;
-    rxbuf.head = BUFNEXT(rxbuf.head, rxbuf);
+    stream_rx_linebuffer_cancel(&rxbuf);
 }
 
 //
@@ -198,18 +192,12 @@ static bool usb_serialPutC (const uint8_t c)
 //
 static int32_t usb_serialGetC (void)
 {
-    if(rxbuf.tail == rxbuf.head)
-        return -1; // no data available else EOF
-
-    int32_t data = (int32_t)rxbuf.data[rxbuf.tail]; // Get next character, increment tmp pointer
-    rxbuf.tail = BUFNEXT(rxbuf.tail, rxbuf);        // and update pointer
-
-    return data;
+    return stream_rx_linebuffer_get(&rxbuf);
 }
 
 static bool usb_serialSuspendInput (bool suspend)
 {
-    return stream_rx_suspend(&rxbuf, suspend);
+    return stream_rx_linebuffer_suspend(&rxbuf, suspend);
 }
 
 static bool usb_serialEnqueueRtCommand (uint8_t c)
@@ -259,13 +247,12 @@ static void usb_execute_realtime (sys_state_t state)
         while(avail--) {
             c = *dp++;
             if(!enqueue_realtime_command(c)) {
-                uint_fast16_t next_head = BUFNEXT(rxbuf.head, rxbuf);   // Get next head pointer
-                if(next_head == rxbuf.tail)                             // If buffer full
-                    rxbuf.overflow = On;                                // flag overflow,
-                else {
-                    rxbuf.data[rxbuf.head] = c;                         // else add character data to buffer
-                    rxbuf.head = next_head;                             // and update pointer
-                }
+                // USB has no per-byte retry path (unlike telnet, which can hold the byte in the TCP
+                // receive window and redeliver it once there's room). A rejected terminator here means
+                // the ring was full when this line tried to close - discard the unclosed line rather
+                // than let it silently absorb every following byte forever (a permanent jam).
+                if(!stream_rx_linebuffer_put(&rxbuf, c))
+                    rxbuf.len[rxbuf.head] = 0;
             }
         }
     }
@@ -296,7 +283,7 @@ FLASHMEM const io_stream_t *usb_serialInit (void)
     };
 
 
-    memset(&rxbuf, 0, sizeof(stream_rx_buffer_t));
+    memset(&rxbuf, 0, sizeof(stream_rx_linebuffer_t));
     memset(&txbuf, 0, sizeof(stream_block_tx_buffer_t));
 
     SerialUSB.begin(BAUD_RATE);
