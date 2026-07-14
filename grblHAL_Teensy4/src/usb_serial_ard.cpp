@@ -37,19 +37,12 @@ extern "C" {
 }
 #endif
 
-// WEDGE-DBG (2026-07, temporary): the Teensy 4 core's default handler for EVERY unimplemented
-// interrupt/exception vector (startup.c, unused_interrupt_vector) - which is what a genuine
-// Cortex-M7 HardFault/BusFault/UsageFault lands in, since this build has no dedicated fault
-// handlers - does __disable_irq() (permanently - nothing re-enables it), stashes a fault record
-// to a fixed OCRAM address, spins for ~8s keeping USB alive so the host never sees a disconnect,
-// then triggers a REAL chip reset. That matches the reset-wedge investigation's symptoms exactly:
-// a hard stop with zero further code execution, only recoverable by power-cycle, with earlier
-// "reboot count kept climbing with no matching mc_reset()" sessions now suspected to have been
-// these fault-triggered resets, not a software re-loop. Teensyduino's CrashReport already reads
-// and CRC-validates that OCRAM record; this just bridges it onto hal.stream so it surfaces in
-// ioSender's console (and console.log) on the next boot instead of being invisible. See
-// ioSender-side memory iosender-streamer-thread.md.
-class WedgeDbgStreamPrint : public Print {
+// Bridges Teensyduino's CrashReport (a CRC-validated fault record stashed in OCRAM by the core's
+// default handler for any unimplemented interrupt/exception vector - what a genuine Cortex-M7
+// HardFault/BusFault/UsageFault lands in on this build) onto hal.stream, so a real crash's fault
+// registers/address surface in ioSender's console on the next boot instead of being invisible.
+// No-ops silently when there's nothing to report.
+class CrashReportStreamPrint : public Print {
 public:
     size_t write (uint8_t c) override
     {
@@ -59,13 +52,13 @@ public:
     }
 };
 
-extern "C" void wedge_dbg_report_crash (void)
+extern "C" void report_crash_if_any (void)
 {
     if(CrashReport) {
-        hal.stream.write_all("[MSG:WEDGE-DBG --- Teensy CrashReport follows (a real CPU fault occurred before this boot) ---]" ASCII_EOL);
-        WedgeDbgStreamPrint sp;
+        hal.stream.write_all("[MSG:--- Teensy CrashReport follows (a fault occurred before this boot) ---]" ASCII_EOL);
+        CrashReportStreamPrint sp;
         CrashReport.printTo(sp);
-        hal.stream.write_all(ASCII_EOL "[MSG:WEDGE-DBG --- end CrashReport ---]" ASCII_EOL);
+        hal.stream.write_all(ASCII_EOL "[MSG:--- end CrashReport ---]" ASCII_EOL);
         CrashReport.clear();
     }
 }
@@ -124,14 +117,10 @@ static void usb_serialRxCancel (void)
 }
 
 //
-// Flushes the serial output buffer, discarding anything not yet handed to the USB hardware.
-// WEDGE-DBG (2026-07, part of the fix): grblHAL's core reboot sequence (grbllib.c) already calls
-// hal.stream.reset_read_buffer() on every reset, but had NO equivalent for the output buffer - this
-// driver didn't even implement one (unlike telnetd.c's streamTxFlush, which existed but was never
-// called either, since the core reboot sequence never invokes reset_write_buffer at all on any
-// transport). A stale, partially-transmitted message left in txbuf across a reset can leak out
-// merged with the reboot's own output with no separator, corrupting whatever follows (observed as a
-// garbled/concatenated "ALARM:" line - see ioSender-side memory iosender-streamer-thread.md).
+// Flushes the serial output buffer, discarding anything not yet handed to the USB hardware. Called
+// from grbllib.c's reboot sequence (hal.stream.reset_write_buffer) - without this, a stale,
+// partially-transmitted message left in txbuf across a reset could leak out merged with the
+// reboot's own output with no separator, corrupting whatever followed.
 static void usb_serialTxFlush (void)
 {
     txbuf.length = 0;
@@ -308,13 +297,8 @@ static void usb_execute_realtime (sys_state_t state)
                 // receive window and redeliver it once there's room). A rejected terminator here means
                 // the ring was full when this line tried to close - discard the unclosed line rather
                 // than let it silently absorb every following byte forever (a permanent jam).
-                if(!stream_rx_linebuffer_put(&rxbuf, c)) {
-                    // WEDGE-DBG: stream_rx_linebuffer_put already logged the ring-full condition itself;
-                    // this adds visibility specifically for the USB discard-the-unclosed-line branch,
-                    // since that recovery step is unique to this driver (telnet has no equivalent).
-                    hal.stream.write_all("[MSG:WEDGE-DBG usb_serial: discarding unclosed line, head slot reset]" ASCII_EOL);
+                if(!stream_rx_linebuffer_put(&rxbuf, c))
                     rxbuf.len[rxbuf.head] = 0;
-                }
             }
         }
     }
