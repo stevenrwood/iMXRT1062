@@ -25,8 +25,50 @@
 #include <string.h>
 
 #include "Arduino.h"
+#include "CrashReport.h"
 
 #include "driver.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "grbl/protocol.h"
+#ifdef __cplusplus
+}
+#endif
+
+// WEDGE-DBG (2026-07, temporary): the Teensy 4 core's default handler for EVERY unimplemented
+// interrupt/exception vector (startup.c, unused_interrupt_vector) - which is what a genuine
+// Cortex-M7 HardFault/BusFault/UsageFault lands in, since this build has no dedicated fault
+// handlers - does __disable_irq() (permanently - nothing re-enables it), stashes a fault record
+// to a fixed OCRAM address, spins for ~8s keeping USB alive so the host never sees a disconnect,
+// then triggers a REAL chip reset. That matches the reset-wedge investigation's symptoms exactly:
+// a hard stop with zero further code execution, only recoverable by power-cycle, with earlier
+// "reboot count kept climbing with no matching mc_reset()" sessions now suspected to have been
+// these fault-triggered resets, not a software re-loop. Teensyduino's CrashReport already reads
+// and CRC-validates that OCRAM record; this just bridges it onto hal.stream so it surfaces in
+// ioSender's console (and console.log) on the next boot instead of being invisible. See
+// ioSender-side memory iosender-streamer-thread.md.
+class WedgeDbgStreamPrint : public Print {
+public:
+    size_t write (uint8_t c) override
+    {
+        char buf[2] = { (char)c, '\0' };
+        hal.stream.write_all(buf);
+        return 1;
+    }
+};
+
+extern "C" void wedge_dbg_report_crash (void)
+{
+    if(CrashReport) {
+        hal.stream.write_all("[MSG:WEDGE-DBG --- Teensy CrashReport follows (a real CPU fault occurred before this boot) ---]" ASCII_EOL);
+        WedgeDbgStreamPrint sp;
+        CrashReport.printTo(sp);
+        hal.stream.write_all(ASCII_EOL "[MSG:WEDGE-DBG --- end CrashReport ---]" ASCII_EOL);
+        CrashReport.clear();
+    }
+}
 
 #if USB_SERIAL_CDC == 1
 
@@ -79,6 +121,21 @@ void usb_serialRxFlush (void)
 static void usb_serialRxCancel (void)
 {
     stream_rx_linebuffer_cancel(&rxbuf);
+}
+
+//
+// Flushes the serial output buffer, discarding anything not yet handed to the USB hardware.
+// WEDGE-DBG (2026-07, part of the fix): grblHAL's core reboot sequence (grbllib.c) already calls
+// hal.stream.reset_read_buffer() on every reset, but had NO equivalent for the output buffer - this
+// driver didn't even implement one (unlike telnetd.c's streamTxFlush, which existed but was never
+// called either, since the core reboot sequence never invokes reset_write_buffer at all on any
+// transport). A stale, partially-transmitted message left in txbuf across a reset can leak out
+// merged with the reboot's own output with no separator, corrupting whatever follows (observed as a
+// garbled/concatenated "ALARM:" line - see ioSender-side memory iosender-streamer-thread.md).
+static void usb_serialTxFlush (void)
+{
+    txbuf.length = 0;
+    txbuf.s = txbuf.data;
 }
 
 //
@@ -251,8 +308,13 @@ static void usb_execute_realtime (sys_state_t state)
                 // receive window and redeliver it once there's room). A rejected terminator here means
                 // the ring was full when this line tried to close - discard the unclosed line rather
                 // than let it silently absorb every following byte forever (a permanent jam).
-                if(!stream_rx_linebuffer_put(&rxbuf, c))
+                if(!stream_rx_linebuffer_put(&rxbuf, c)) {
+                    // WEDGE-DBG: stream_rx_linebuffer_put already logged the ring-full condition itself;
+                    // this adds visibility specifically for the USB discard-the-unclosed-line branch,
+                    // since that recovery step is unique to this driver (telnet has no equivalent).
+                    hal.stream.write_all("[MSG:WEDGE-DBG usb_serial: discarding unclosed line, head slot reset]" ASCII_EOL);
                     rxbuf.len[rxbuf.head] = 0;
+                }
             }
         }
     }
@@ -279,7 +341,9 @@ FLASHMEM const io_stream_t *usb_serialInit (void)
         .suspend_read = usb_serialSuspendInput,
         .write_n = usb_serialWrite,
         .disable_rx = NULL,
-        .get_rx_buffer_count = usb_serialRxCount
+        .get_rx_buffer_count = usb_serialRxCount,
+        .get_tx_buffer_count = NULL,
+        .reset_write_buffer = usb_serialTxFlush
     };
 
 
