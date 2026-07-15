@@ -12,6 +12,9 @@
 
 name: Build firmware (Teensy 4.x)
 
+permissions:
+  contents: write   # needed to publish/update the fw-latest release (push-triggered builds only)
+
 on:
   push:
     branches: [ srw/local-build-config ]
@@ -67,8 +70,10 @@ jobs:
         run: pio run -d grblHAL_Teensy4 -e ${{ inputs.env || 'teensy41' }}
 
       - name: Stage the .hex with the env + short SHA
+        id: stage
         run: |
           E="${{ inputs.env || 'teensy41' }}"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           cp "grblHAL_Teensy4/.pio/build/$E/firmware.hex" "firmware-$E-${GITHUB_SHA::7}.hex"
 
       - name: Upload firmware
@@ -77,3 +82,18 @@ jobs:
           name: firmware-${{ inputs.env || 'teensy41' }}
           path: firmware-*.hex
           if-no-files-found: error
+
+      # Push-triggered builds are the ones actually running on real hardware (srw/local-build-config,
+      # default teensy41 env) - publish/roll a "fw-latest" release so ioSender's Machine Setup > Machine
+      # tab can compare a connected board's own [BUILD:...] drv: stamp against this and offer an update,
+      # same pattern as the Simulator's sim-latest release. Manual dispatch runs (which may use a
+      # different env/extra_defines) are excluded so they never clobber it.
+      - name: Publish fw-latest release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: fw-latest
+          name: "Firmware (latest) - ${{ github.sha }}"
+          body: "drv:srw/local-build-config@${{ steps.stage.outputs.short_sha }}"
+          prerelease: true
+          files: firmware-*.hex
