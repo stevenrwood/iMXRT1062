@@ -52,8 +52,123 @@ public:
     }
 };
 
+// Hang watchdog: a companion to CrashReport for the case CrashReport doesn't cover - a hardware
+// WDOG1 timeout with NO CPU fault, i.e. a single g-code line/command dispatch (protocol.c's
+// watchdog_begin/_end) never returned. Reuses CrashReport's own technique - a small struct at a
+// fixed address in the top of OCRAM2 (.bss.dma/RAM is NOLOAD in imxrt1062_t41.ld, so this region
+// is never zero-initialized by the C runtime and survives a WDOG reset untouched), guarded by a
+// magic number + CRC exactly like CrashReport's arm_fault_info_struct. Placed at 0x2027FF00,
+// immediately below CrashReport's own 128-byte block at 0x2027FF80, so the two never collide.
+struct hang_wd_record_struct {
+    uint32_t magic;
+    uint32_t len;
+    char line[112];
+    uint32_t crc;
+};
+
+#define HANG_WD_MAGIC 0x574C4E48UL // "HNLW"
+
+static struct hang_wd_record_struct * const hang_wd = (struct hang_wd_record_struct *)0x2027FF00;
+
+static uint32_t hang_wd_crc32 (const void *data, size_t len)
+{
+    const uint8_t *p = (const uint8_t *)data;
+    uint32_t crc = 0xFFFFFFFF;
+
+    while(len--) {
+        crc ^= *p++;
+        for(int i = 0; i < 8; i++)
+            crc = (crc >> 1) ^ ((crc & 1) * 0xEDB88320UL);
+    }
+
+    return crc;
+}
+
+// Called once per (re)init in grbllib.c, on every reset - idempotent, safe to call more than once:
+// WDOG1_WCR's control fields latch write-once until the next real chip reset, so later calls just
+// re-feed. WT is in 0.5s units; 19 -> 10s, twice protocol.c's WATCHDOG_STUCK_MS soft-log threshold
+// so the log has a chance to land before the hardware reset fires. SRS/WDA are active-LOW
+// "write 0 to trigger immediately" bits - written 1 (their deasserted default) here, never 0.
+extern "C" void hang_watchdog_init (void)
+{
+    CCM_CCGR3 |= CCM_CCGR3_WDOG1(CCM_CCGR_ON);
+
+    WDOG1_WMCR = 0;
+    WDOG1_WCR = WDOG_WCR_WDZST | WDOG_WCR_WDBG | WDOG_WCR_SRS | WDOG_WCR_WDA | WDOG_WCR_WT(19) | WDOG_WCR_WDE;
+
+    WDOG1_WSR = 0x5555;
+    WDOG1_WSR = 0xAAAA;
+}
+
+extern "C" void hang_watchdog_feed (void)
+{
+    WDOG1_WSR = 0x5555;
+    WDOG1_WSR = 0xAAAA;
+}
+
+// Records the line/command about to be dispatched, so if THIS dispatch is the one that hangs, the
+// record read back on the next boot names it. Also feeds - re-arming covers the gap since the last
+// feed, same as every other feed point.
+extern "C" void hang_watchdog_arm (const char *line)
+{
+    hang_wd->magic = 0;
+    arm_dcache_flush((void *)hang_wd, sizeof(*hang_wd));
+
+    size_t n = strlen(line);
+    if(n >= sizeof(hang_wd->line))
+        n = sizeof(hang_wd->line) - 1;
+    memcpy(hang_wd->line, line, n);
+    hang_wd->line[n] = '\0';
+    hang_wd->len = (uint32_t)n;
+    hang_wd->crc = hang_wd_crc32(hang_wd->line, sizeof(hang_wd->line)) ^ hang_wd->len;
+
+    arm_dcache_flush((void *)hang_wd, sizeof(*hang_wd));
+    hang_wd->magic = HANG_WD_MAGIC;
+    arm_dcache_flush((void *)hang_wd, sizeof(*hang_wd));
+
+    hang_watchdog_feed();
+}
+
+// Plain (non-retained) RAM copy of the last hang-watchdog record, populated once at boot below.
+// Needed because hang_wd itself (the OCRAM record) gets overwritten by the very next dispatch's
+// hang_watchdog_arm() - including the `$I` command used to query this - so by the time build_info()
+// (system.c) runs to print it, hang_wd would already hold "$I", not the line that caused the
+// reset. This copy is stable for the rest of the power-on session, until the next real hang-reset.
+static bool last_hang_valid = false;
+static char last_hang_line[112];
+
+extern "C" void report_hang_watchdog_summary (void)
+{
+    if(last_hang_valid) {
+        hal.stream.write_all("[MSG:Restart after controller hang processing: ");
+        hal.stream.write_all(last_hang_line);
+        hal.stream.write_all("]" ASCII_EOL);
+    }
+}
+
 extern "C" void report_crash_if_any (void)
 {
+    // Own the WDOG-reset flag ourselves, read BEFORE CrashReport.printTo() below (which write-1-
+    // clears all of SRC_SRSR as a side effect, but only runs when a CPU fault ALSO happened) gets a
+    // chance to consume it - a benign WDT timeout with no fault (the case this feature exists for)
+    // would otherwise never be reported at all, since CrashReport's own "caused by watchdog" line
+    // only prints alongside a real fault record.
+    if(SRC_SRSR & SRC_SRSR_WDOG_RST_B) {
+        uint32_t crc = hang_wd_crc32(hang_wd->line, sizeof(hang_wd->line)) ^ hang_wd->len;
+        if(hang_wd->magic == HANG_WD_MAGIC && hang_wd->crc == crc) {
+            strncpy(last_hang_line, hang_wd->line, sizeof(last_hang_line) - 1);
+            last_hang_line[sizeof(last_hang_line) - 1] = '\0';
+            last_hang_valid = true;
+            hal.stream.write_all("[MSG:Restart after controller hang processing: ");
+            hal.stream.write_all(hang_wd->line);
+            hal.stream.write_all("]" ASCII_EOL);
+        } else
+            hal.stream.write_all("[MSG:Restart after controller hang - no valid record of the failing line was found]" ASCII_EOL);
+        hang_wd->magic = 0;
+        arm_dcache_flush((void *)hang_wd, sizeof(*hang_wd));
+        SRC_SRSR = SRC_SRSR_WDOG_RST_B; // write-1-to-clear, only this bit
+    }
+
     if(CrashReport) {
         hal.stream.write_all("[MSG:--- Teensy CrashReport follows (a fault occurred before this boot) ---]" ASCII_EOL);
         CrashReportStreamPrint sp;
