@@ -133,7 +133,8 @@ extern "C" void hang_watchdog_arm (const char *line)
 // Needed because hang_wd itself (the OCRAM record) gets overwritten by the very next dispatch's
 // hang_watchdog_arm() - including the `$I` command used to query this - so by the time build_info()
 // (system.c) runs to print it, hang_wd would already hold "$I", not the line that caused the
-// reset. This copy is stable for the rest of the power-on session, until the next real hang-reset.
+// reset. One-shot: report_hang_watchdog_summary() clears last_hang_valid after the first $I/$I+
+// that reports it, so the notice doesn't keep reappearing on every later query this session.
 static bool last_hang_valid = false;
 static char last_hang_line[112];
 
@@ -143,6 +144,7 @@ extern "C" void report_hang_watchdog_summary (void)
         hal.stream.write_all("[MSG:Restart after controller hang processing: ");
         hal.stream.write_all(last_hang_line);
         hal.stream.write_all("]" ASCII_EOL);
+        last_hang_valid = false;   // one-shot: reported once (the first $I/$I+ after the hang-reset), then done
     }
 }
 
