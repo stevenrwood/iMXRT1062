@@ -86,9 +86,10 @@ static uint32_t hang_wd_crc32 (const void *data, size_t len)
 
 // Called once per (re)init in grbllib.c, on every reset - idempotent, safe to call more than once:
 // WDOG1_WCR's control fields latch write-once until the next real chip reset, so later calls just
-// re-feed. WT is in 0.5s units; 19 -> 10s, twice protocol.c's WATCHDOG_STUCK_MS soft-log threshold
-// so the log has a chance to land before the hardware reset fires. SRS/WDA are active-LOW
-// "write 0 to trigger immediately" bits - written 1 (their deasserted default) here, never 0.
+// re-feed. WT is in 0.5s units; 19 -> 10s (WATCHDOG_HARDWARE_PERIOD_MS in protocol.c) - protocol.c's
+// grace-period-exhausted log fires right as this feed is withheld, so it has ~10s to land over the
+// wire before this hardware timeout actually resets the board. SRS/WDA are active-LOW "write 0 to
+// trigger immediately" bits - written 1 (their deasserted default) here, never 0.
 extern "C" void hang_watchdog_init (void)
 {
     CCM_CCGR3 |= CCM_CCGR3_WDOG1(CCM_CCGR_ON);
