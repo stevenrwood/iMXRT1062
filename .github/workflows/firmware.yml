@@ -15,6 +15,16 @@ name: Build firmware (Teensy 4.x)
 permissions:
   contents: write   # needed to publish/update the fw-latest release (push-triggered builds only)
 
+# fw-latest is a single ROLLING release that every push-triggered run updates in place (body text +
+# .hex asset). Without this, two pushes close together can run their "Publish fw-latest release" steps
+# concurrently and interleave their softprops/action-gh-release API calls - observed in the wild as the
+# release body describing a newer commit than the .hex asset actually attached (ioSender's Check for
+# Updates offered a build whose downloaded/flashed .hex turned out to still be the previous one).
+# cancel-in-progress so a superseded run never gets to publish stale data after a newer push already has.
+concurrency:
+  group: fw-latest-release
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ srw/local-build-config ]
@@ -41,6 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0   # full history - the changelog step needs to `git log` back to the previous release's sha
 
       - uses: actions/setup-python@v5
         with:
@@ -88,12 +99,38 @@ jobs:
       # tab can compare a connected board's own [BUILD:...] drv: stamp against this and offer an update,
       # same pattern as the Simulator's sim-latest release. Manual dispatch runs (which may use a
       # different env/extra_defines) are excluded so they never clobber it.
+      #
+      # Changelog: fw-latest is a ROLLING release (same tag, overwritten every push), so the only record
+      # of "what changed since you last updated" is whatever we write into ITS OWN body before overwriting
+      # it - read the outgoing release's drv: sha first, then log everything since it. First run ever (or
+      # if the previous release/sha can't be found) falls back to just the last commit, so this never fails
+      # the build over a missing baseline.
+      - name: Compute changelog since the previous fw-latest
+        id: changelog
+        run: |
+          PREV_JSON=$(curl -s -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/fw-latest" || true)
+          PREV_SHA=$(printf '%s' "$PREV_JSON" | grep -o 'drv:[A-Za-z0-9/_.-]*@[0-9a-f]\{7,40\}' | head -1 | sed 's/.*@//')
+          {
+            echo "changelog<<CHANGELOG_EOF"
+            if [ -n "$PREV_SHA" ] && git cat-file -e "$PREV_SHA" 2>/dev/null; then
+              git log --oneline "$PREV_SHA..HEAD"
+            else
+              git log --oneline -1
+            fi
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish fw-latest release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: fw-latest
           name: "Firmware (latest) - ${{ github.sha }}"
-          body: "drv:srw/local-build-config@${{ steps.stage.outputs.short_sha }}"
+          body: |
+            drv:srw/local-build-config@${{ steps.stage.outputs.short_sha }}
+
+            Changes since the last published build:
+            ${{ steps.changelog.outputs.changelog }}
           prerelease: true
           files: firmware-*.hex
