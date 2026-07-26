@@ -95,21 +95,27 @@ jobs:
           if-no-files-found: error
 
       # Push-triggered builds are the ones actually running on real hardware (srw/local-build-config,
-      # default teensy41 env) - publish/roll a "fw-latest" release so ioSender's Machine Setup > Machine
-      # tab can compare a connected board's own [BUILD:...] drv: stamp against this and offer an update,
-      # same pattern as the Simulator's sim-latest release. Manual dispatch runs (which may use a
-      # different env/extra_defines) are excluded so they never clobber it.
+      # default teensy41 env) - publish a real, immutable release per build (tag fw-<short-sha>) so
+      # ioSender's Machine Setup > Machine tab can compare a connected board's own [BUILD:...] drv: stamp
+      # against GitHub's own "latest release" resolution (/releases/latest) and offer an update - the
+      # exact same pattern ioSender's own app releases already use (see MainWindow.checkForUpdates_Click),
+      # not a hand-rolled rolling tag. A single shared "fw-latest" tag that gets overwritten in place on
+      # every push turned out to have two real bugs: two close-together pushes could interleave their
+      # publish steps (release body describing a newer commit than the .hex asset actually attached), and
+      # re-uploading uniquely-named assets to the same release just accumulates old .hex files forever
+      # instead of replacing them - both eliminated by never overwriting anything: each build gets its own
+      # release, nothing is ever mutated in place, prerelease:false so GitHub's own "latest" resolution
+      # picks the newest one automatically. Manual dispatch runs (which may use a different env/
+      # extra_defines) are excluded so they never publish at all.
       #
-      # Changelog: fw-latest is a ROLLING release (same tag, overwritten every push), so the only record
-      # of "what changed since you last updated" is whatever we write into ITS OWN body before overwriting
-      # it - read the outgoing release's drv: sha first, then log everything since it. First run ever (or
-      # if the previous release/sha can't be found) falls back to just the last commit, so this never fails
-      # the build over a missing baseline.
-      - name: Compute changelog since the previous fw-latest
+      # Changelog: read whatever the previous "latest" release's drv: line says, then log everything
+      # since it. First run ever (or if the previous release/sha can't be found) falls back to just the
+      # last commit, so this never fails the build over a missing baseline.
+      - name: Compute changelog since the previous release
         id: changelog
         run: |
           PREV_JSON=$(curl -s -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/fw-latest" || true)
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" || true)
           PREV_SHA=$(printf '%s' "$PREV_JSON" | grep -o 'drv:[A-Za-z0-9/_.-]*@[0-9a-f]\{7,40\}' | head -1 | sed 's/.*@//')
           {
             echo "changelog<<CHANGELOG_EOF"
@@ -121,16 +127,16 @@ jobs:
             echo "CHANGELOG_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Publish fw-latest release
+      - name: Publish firmware release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: fw-latest
-          name: "Firmware (latest) - ${{ github.sha }}"
+          tag_name: fw-${{ steps.stage.outputs.short_sha }}
+          name: "Firmware ${{ steps.stage.outputs.short_sha }}"
           body: |
             drv:srw/local-build-config@${{ steps.stage.outputs.short_sha }}
 
             Changes since the last published build:
             ${{ steps.changelog.outputs.changelog }}
-          prerelease: true
+          prerelease: false
           files: firmware-*.hex
