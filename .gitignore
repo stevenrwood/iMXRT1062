@@ -39,3 +39,12 @@ build
 
 # Auto-generated build timestamp header (scripts/touch_build_stamp.py)
 grblHAL_Teensy4/src/build_stamp.h
+
+# Claude Code turn loop (generated / per-machine)
+.claude/turn-state.json
+**/.claude/turn-state.json
+.claude/session-banner.json
+**/.claude/session-banner.json
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock

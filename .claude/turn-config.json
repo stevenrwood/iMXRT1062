@@ -1,0 +1,67 @@
+{
+  "_comment": [
+    "This project's inputs to the shared turn-loop hooks in claude-hub/hooks/.",
+    "The mechanism lives in the hub; every string specific to this driver fork lives here.",
+    "Layered over hub defaults.json - `denies` merge by name and then FIELD BY FIELD, so a hub rule",
+    "applies here unchanged unless a field below changes it, and is deliberately not restated.",
+    "Canonical doc: c:\\github\\claude-hub\\playbooks\\turn_workflow_loop.md."
+  ],
+
+  "project": "iMXRT1062",
+
+  "source": {
+    "_extensions": "C/C++ firmware plus the inputs that decide what gets built. The submodule forks (src/grbl = core, src/sdcard, src/networking) sit INSIDE this tree, and that is where the real code changes live per CLAUDE.md - so their .c/.h count as source here, which is correct: a change there still has to build. 'ini' is platformio.ini, 'tpl' is platformio.tpl, 'py' is scripts/touch_build_stamp.py, 'yml' is the firmware workflow. Markdown is NOT source: CLAUDE.md and srw/README.md are documents, and demanding a firmware build after editing one would only teach me to ignore the gate.",
+    "extensions": ["c", "h", "cpp", "ino", "ini", "tpl", "py", "yml"],
+    "_ignore": "Checked, and empty on purpose. The playbook's test is the INTERSECTION of what a non-human writer COMMITS with the extensions above, and nothing here intersects: .github/workflows/firmware.yml only builds and publishes a release (no `git add` back to the branch), the repo ships no commit-making script of its own, and no other project's session commits into this repo. scripts/touch_build_stamp.py writes src/build_stamp.h - a source extension - but it is gitignored, never committed and never hand-edited, and .pio/ likewise. Add an entry when a writer appears whose COMMITTED paths intersect the list above, not before.",
+    "ignore": []
+  },
+
+  "verify": {
+    "_note": "Firmware. There is nothing on this machine to run it on - verification here is the build that produces the .hex, and the flash-and-test is the user's, on hardware. So the gate asks for the same build CI runs, and the hand-off must say plainly what to flash and what to watch. A green build is NOT evidence the behaviour is right - say 'built, unverified on hardware - please check X' rather than 'fixed'.",
+    "pattern": "pio\\s+run\\b(?![^&|]*-t\\s+clean)",
+    "command": "pio run -d grblHAL_Teensy4 -e teensy41     # -> .pio/build/teensy41/firmware.hex; teensy40 also builds",
+    "label": "firmware build (teensy41)"
+  },
+
+  "denies": [
+    {
+      "name": "flash",
+      "enabled": true,
+      "match": "pio\\s+run[^&|]*-t\\s+upload|teensy_loader_cli|tycmd\\s+upload|teensy\\.exe",
+      "allowWhenPromptMatches": "flash|upload|program the teensy|reflash|burn it",
+      "message": "BLOCKED: flashing the Teensy was not requested in this turn's prompt.\n\nFlashing reboots the real controller. That is hardware, and the standing rule is: cowboy about code, never about hardware that can move a gantry or burn something. Build the .hex and HAND OFF - say which file to flash with the Teensy Loader and what to watch for. If you believe a flash is needed, ask."
+    }
+  ],
+
+  "checklist": [
+    "== TURN LOOP (c:\\github\\claude-hub\\playbooks\\turn_workflow_loop.md - canonical, follow all of it) ==",
+    "1. PLAN FIRST. Before the first Edit/Write, state in your visible response what you understood and",
+    "   how you intend to do it. A plain question (\"can we...\", \"what if...\") is a DISCUSSION - answer it,",
+    "   do not implement. Record it:",
+    "   pwsh -File c:\\github\\claude-hub\\tools\\turn.ps1 plan \"<restated ask + approach>\"",
+    "2. IMPLEMENT. One AskUserQuestion call at a time. On a rename, grep the old identifier repo-wide",
+    "   BEFORE the first build - this is C, so a missed reference can still link.",
+    "3. INTERIM BUILDS: pio run -d grblHAL_Teensy4 -e teensy41. Compile-checking is fine and does not",
+    "   end a turn.",
+    "4. COMMIT AS YOU GO - each piece the moment it is verified. Never save commits up. A change in a",
+    "   SUBMODULE is TWO commits: one in the submodule (src/grbl, src/sdcard, src/networking) and the",
+    "   pointer bump here. Both, or it does not ship.",
+    "5. VERIFY = the build that produces the hex, since nothing here can run the firmware:",
+    "   pio run -d grblHAL_Teensy4 -e teensy41",
+    "6. HAND OFF - name the .hex to flash (.pio/build/teensy41/firmware.hex) and say plainly what to",
+    "   watch for once it is on the controller. A green build is not a working change: say",
+    "   \"built, unverified on hardware - please check X\". The turn ends here.",
+    "",
+    "THIS FORK'S SHAPE (CLAUDE.md and srw/ProposedPRs.html are canonical):",
+    "- Default branch srw/local-build-config is ALL-OR-NOTHING: it pins every submodule to its fork",
+    "  branch and is the turnkey firmware. The per-submodule feat/*/fix/* branches exist for UPSTREAM",
+    "  submission and cherry-pick, not for subset builds. There is no selective composer for firmware.",
+    "- The code lives in the submodule forks (core, Plugin_SD_card, Plugin_networking); this repo",
+    "  carries the build config and the tracker. Know which repo you are editing before you edit it.",
+    "- srw/ProposedPRs.html is the per-PR tracker - update it when a PR's state changes.",
+    "- Pair with the ioSender and Simulator forks, but that is a SEPARATE session in that repo.",
+    "  One project per session, or the conversation log files under the wrong project.",
+    "",
+    "HARD RULE (hook-enforced): no flashing the Teensy unless asked THIS turn. Build and hand off."
+  ]
+}

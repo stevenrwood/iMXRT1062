@@ -1,0 +1,43 @@
+{
+  "_comment": [
+    "This project's OWN gate cases. The hub's test-gates.ps1 proves the mechanism against a synthetic",
+    "fixture and knows nothing about this project; these prove THIS project's rules. Run them with",
+    "  pwsh -File c:\\github\\claude-hub\\hooks\\test-gates.ps1 -ProjectRoot c:\\github\\iMXRT1062",
+    "",
+    "The flash cases exist because this repo's output goes onto a real controller: flashing reboots",
+    "it, and an unrequested flash is a hardware action taken on my own initiative. Building is the",
+    "turn's verification and must never be caught by the same rule - hence the allow cases."
+  ],
+  "cases": [
+    {
+      "name": "flashing on my own initiative is blocked",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41 -t upload",
+      "expect": "DENY"
+    },
+    {
+      "name": "the loader CLI is the same rule by another name",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "teensy_loader_cli --mcu=TEENSY41 -w .pio/build/teensy41/firmware.hex",
+      "expect": "DENY"
+    },
+    {
+      "name": "flashing asked for in this turn is allowed",
+      "prompt": "build it and flash the teensy so I can test",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41 -t upload",
+      "expect": "allow"
+    },
+    {
+      "name": "the ordinary verification build is never touched",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "allow"
+    },
+    {
+      "name": "the teensy40 build is never touched either",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy40",
+      "expect": "allow"
+    }
+  ]
+}
