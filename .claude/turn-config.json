@@ -18,8 +18,9 @@
 
   "verify": {
     "_note": "Firmware. There is nothing on this machine to run it on - verification here is the build that produces the .hex, and the flash-and-test is the user's, on hardware. So the gate asks for the same build CI runs, and the hand-off must say plainly what to flash and what to watch. A green build is NOT evidence the behaviour is right - say 'built, unverified on hardware - please check X' rather than 'fixed'.",
-    "pattern": "pio\\s+run\\b(?![^&|]*-t\\s+clean)",
-    "command": "pio run -d grblHAL_Teensy4 -e teensy41     # -> .pio/build/teensy41/firmware.hex; teensy40 also builds",
+    "_pio": "pio is NOT on PATH on the Windows box - PlatformIO is installed by the VSCode extension, so the exe is ~/.platformio/penv/Scripts/pio.exe and a bare `pio` fails with command-not-found. Use $env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe there; a plain `pio` is right wherever `pip install platformio` put it on PATH (the Macs, CI). The pattern matches either form, so the gate does not care which you used.",
+    "pattern": "pio(\\.exe)?[\"']?\\s+run\\b(?![^&|]*-t\\s+clean)",
+    "command": "pio run -d grblHAL_Teensy4 -e teensy41     # -> .pio/build/teensy41/firmware.hex; teensy40 also builds. Windows: & \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run -d grblHAL_Teensy4 -e teensy41",
     "label": "firmware build (teensy41)"
   },
 
@@ -27,7 +28,7 @@
     {
       "name": "flash",
       "enabled": true,
-      "match": "pio\\s+run[^&|]*-t\\s+upload|teensy_loader_cli|tycmd\\s+upload|teensy\\.exe",
+      "match": "pio(\\.exe)?[\"']?\\s+run[^&|]*-t\\s+upload|teensy_loader_cli|tycmd\\s+upload|teensy_post_compile",
       "allowWhenPromptMatches": "flash|upload|program the teensy|reflash|burn it",
       "message": "BLOCKED: flashing the Teensy was not requested in this turn's prompt.\n\nFlashing reboots the real controller. That is hardware, and the standing rule is: cowboy about code, never about hardware that can move a gantry or burn something. Build the .hex and HAND OFF - say which file to flash with the Teensy Loader and what to watch for. If you believe a flash is needed, ask."
     }

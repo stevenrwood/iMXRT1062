@@ -38,6 +38,18 @@
       "prompt": "fix the hang watchdog grace period",
       "command": "pio run -d grblHAL_Teensy4 -e teensy40",
       "expect": "allow"
+    },
+    {
+      "name": "full-path pio (not on PATH on Windows) is still caught when uploading",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run -d grblHAL_Teensy4 -e teensy41 -t upload",
+      "expect": "DENY"
+    },
+    {
+      "name": "full-path pio building is still allowed",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "allow"
     }
   ]
 }
