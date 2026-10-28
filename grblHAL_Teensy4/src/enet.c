@@ -166,7 +166,7 @@ FLASHMEM static void mdns_device_info (struct mdns_service *service, void *txt_u
 {
     char build[20] = "build=";
 
-    strcat(build, uitoa(GRBL_BUILD));
+    strcat(build, FIRMWARE_VERSION);
     mdns_resp_add_service_txtitem(service, "model=grblHAL", 13);
     mdns_resp_add_service_txtitem(service, (char *)txt_userdata, strlen((char *)txt_userdata));
     mdns_resp_add_service_txtitem(service, build, strlen(build));
@@ -246,7 +246,7 @@ static void netif_status_callback (struct netif *netif)
 
         if((services.mdns = mdns_resp_add_netif(netif_default, network.hostname, MDNS_TTL) == ERR_OK)) {
 
-            mdns_resp_add_service(netif_default, network.hostname, "_device-info", DNSSD_PROTO_TCP, 0, MDNS_TTL, mdns_device_info, "version=" GRBL_VERSION);
+            mdns_resp_add_service(netif_default, network.hostname, "_device-info", DNSSD_PROTO_TCP, 0, MDNS_TTL, mdns_device_info, "version=" FIRMWARE_VERSION);
 
             if(services.http)
                 mdns_resp_add_service(netif_default, network.hostname, "_http", DNSSD_PROTO_TCP, network.http_port, MDNS_TTL, mdns_service_info, "path=/");
