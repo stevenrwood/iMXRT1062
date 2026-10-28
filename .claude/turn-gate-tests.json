@@ -50,6 +50,66 @@
       "prompt": "fix the hang watchdog grace period",
       "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run -d grblHAL_Teensy4 -e teensy41",
       "expect": "allow"
+    },
+
+    {
+      "name": "platformio, the long name, is caught when uploading",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "platformio run -d grblHAL_Teensy4 -e teensy41 -t upload",
+      "expect": "DENY"
+    },
+    {
+      "name": "platformio building is allowed",
+      "prompt": "fix the hang watchdog grace period",
+      "command": "platformio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "allow"
+    },
+    {
+      "name": "a commit MESSAGE quoting the upload form is prose, not a flash",
+      "prompt": "fix the verify pattern",
+      "command": "git commit -m @'\nturn-gate: match platformio too\n\nThe same gap let platformio run -t upload through the flash gate.\n'@",
+      "expect": "allow"
+    },
+
+    {
+      "name": "verify: pio run counts",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "verify"
+    },
+    {
+      "name": "verify: platformio run counts too",
+      "command": "platformio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "verify"
+    },
+    {
+      "name": "verify: the Windows full-path exe form counts",
+      "command": "& \"$env:USERPROFILE\\.platformio\\penv\\Scripts\\pio.exe\" run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "verify"
+    },
+    {
+      "name": "verify: the posix venv path counts",
+      "command": "~/.platformio/penv/bin/pio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "verify"
+    },
+    {
+      "name": "verify: a $pio variable form counts",
+      "command": "& $pio run -d grblHAL_Teensy4 -e teensy41",
+      "expect": "verify"
+    },
+    {
+      "name": "verify: cleaning is NOT a verification",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41 -t clean",
+      "expect": "no-verify"
+    },
+    {
+      "name": "verify: cleaning under the long name is NOT one either",
+      "command": "platformio run -d grblHAL_Teensy4 -e teensy41 -t clean",
+      "expect": "no-verify"
+    },
+    {
+      "name": "verify: an upload builds first, so it counts as one",
+      "command": "pio run -d grblHAL_Teensy4 -e teensy41 -t upload",
+      "expect": "verify"
     }
   ]
 }
