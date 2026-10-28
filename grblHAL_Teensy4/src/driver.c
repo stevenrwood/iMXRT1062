@@ -2912,7 +2912,23 @@ FLASHMEM static bool driver_setup (settings_t *settings)
 
   // Set defaults
 
-    IOInitDone = settings->version.id == 23;
+    // 🔴 WAS A HARD-CODED 23, and it cost most of 2026-10-28 to find.
+    //
+    // This is the driver asserting the settings-struct version it was built against. As a literal it
+    // silently rejects any core whose SETTINGS_VERSION has moved: bumping the core to 30 made this
+    // false, so driver_setup() returned false, the `setup` bit cleared, and grbl_enter raised
+    // Alarm_SelftestFailed (ALARM:16) with sys.driver_started = false. The board then sat degraded,
+    // hung, and the hang watchdog reset it every 10 seconds - with no output that said why, because
+    // task_execute_on_startup PURGES every startup task except report_warning when driver_started is
+    // false, which threw away report_driver_error's own "Fatal: Incompatible driver" message.
+    //
+    // Compared against SETTINGS_VERSION it does the same job without a human having to remember:
+    // the driver is compiled against one core, so it picks up that core's version automatically.
+    //
+    // Found by instrumenting every driver.ok assignment site and printing the FAILED mask from a
+    // report_warning task (the only kind that survives the purge): "drvok fail@site 1=0 2=0 3=0 4=0
+    // 5=2 6=2 7=2" put it exactly here - bit 2 is `setup`, and sites 1-4 were still clean.
+    IOInitDone = settings->version.id == SETTINGS_VERSION;
 
     hal.settings_changed(settings, (settings_changed_flags_t){0});
     hal.stepper.go_idle(true);
