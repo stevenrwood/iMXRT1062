@@ -138,5 +138,18 @@ jobs:
 
             Changes since the last published build:
             ${{ steps.changelog.outputs.changelog }}
-          prerelease: false
+          # 🔴 PRERELEASE, deliberately - do not flip this back without reading the next paragraph.
+          #
+          # A non-prerelease becomes GitHub's /releases/latest, which is exactly what ioSender's
+          # FirmwareUpdateManager polls (FirmwareRepo = "stevenrwood/iMXRT1062") and then OFFERS TO
+          # FLASH. Measured 2026-10-28: ioSenderV2/ioSender v2.41 is cut from the `master` lineage
+          # and has 205 downloads, and that lineage does NOT carry the GrblInfo.Build fix (71c10b20,
+          # currently only on pr/portable-core). Firmware from 2026-10-28 onward drops the build-date
+          # field from [VER:], so GrblInfo.Build parses as 0 there and flips TEN numeric gates - two
+          # of which switch ON a legacy bug workaround this firmware does not need.
+          #
+          # So publishing a normal release would offer ~205 senders firmware they cannot correctly
+          # drive. Promote to prerelease:false only once the fix has shipped in a v2.N from master.
+          # The .githooks/pre-push guard refuses to push this branch if this is set to false.
+          prerelease: true
           files: firmware-*.hex

@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Refuse to push the firmware build branch if CI would publish a NON-prerelease.
+#
+# Why this exists. Pushing srw/local-build-config triggers .github/workflows/firmware.yml, which
+# builds and PUBLISHES a GitHub release. With prerelease:false that release becomes
+# /releases/latest - which is precisely what ioSender's FirmwareUpdateManager polls
+# (FirmwareRepo = "stevenrwood/iMXRT1062") and then offers to flash.
+#
+# Measured 2026-10-28: ioSenderV2/ioSender v2.41 is cut from the `master` lineage and has 205
+# downloads, and that lineage does NOT carry the GrblInfo.Build fix. Firmware from 2026-10-28
+# drops the build-date field from [VER:], so Build parses as 0 there and flips ten numeric gates,
+# two of which switch ON a legacy bug workaround. A push is therefore a publish to real users, and
+# nothing on the git side says so - the same shape of trap as ioSender's own
+# "a branch push republishes the beta" problem.
+#
+# Installed via a TRACKED hooks directory so it cannot be lost to a reclone:
+#     git config core.hooksPath .githooks
+#
+# Override for a deliberate promotion (say so out loud, do not make it a habit):
+#     FW_ALLOW_RELEASE=1 git push ...
+
+guarded_branch="srw/local-build-config"
+workflow=".github/workflows/firmware.yml"
+
+# stdin is "<local ref> <local sha> <remote ref> <remote sha>" per ref being pushed.
+pushing_guarded=0
+while read -r local_ref _ _ _; do
+    case "$local_ref" in
+        *"$guarded_branch") pushing_guarded=1 ;;
+    esac
+done
+
+[ "$pushing_guarded" -eq 1 ] || exit 0
+
+if [ "${FW_ALLOW_RELEASE:-}" = "1" ]; then
+    echo "pre-push: FW_ALLOW_RELEASE=1 - allowing a push that may publish a non-prerelease." >&2
+    exit 0
+fi
+
+[ -f "$workflow" ] || exit 0
+
+# Look at the publish step's prerelease setting, ignoring comment lines.
+setting=$(grep -vE '^\s*#' "$workflow" | grep -E '^\s*prerelease:' | head -1 | tr -d ' ')
+
+case "$setting" in
+    prerelease:true)
+        exit 0
+        ;;
+    "")
+        echo "" >&2
+        echo "BLOCKED: no 'prerelease:' setting found in $workflow." >&2
+        echo "Pushing $guarded_branch publishes a firmware release that ioSender offers to flash." >&2
+        echo "Confirm what CI would publish, then re-run with FW_ALLOW_RELEASE=1 if it is intended." >&2
+        exit 1
+        ;;
+    *)
+        echo "" >&2
+        echo "BLOCKED: $workflow has '$setting'." >&2
+        echo "" >&2
+        echo "Pushing $guarded_branch triggers a build that PUBLISHES a release. A non-prerelease" >&2
+        echo "becomes /releases/latest, which ioSender's FirmwareUpdateManager polls and offers to" >&2
+        echo "flash - and the master lineage (v2.41, 205 downloads) cannot correctly drive firmware" >&2
+        echo "built after 2026-10-28, because GrblInfo.Build parses as 0 there." >&2
+        echo "" >&2
+        echo "Either set prerelease: true, or promote deliberately with:" >&2
+        echo "    FW_ALLOW_RELEASE=1 git push ..." >&2
+        echo "" >&2
+        exit 1
+        ;;
+esac
