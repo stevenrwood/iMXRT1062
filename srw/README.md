@@ -35,7 +35,9 @@ cd iMXRT1062
 # Initialize submodules (core, sdcard, networking, eeprom, etc.)
 git submodule update --init --recursive
 
-# Add the stevenrwood 'fork' remote on each PR-bearing submodule
+# Add the stevenrwood 'fork' remote on each forked submodule
+# (core, sdcard, networking, plus openpnp and webui - those two are forked only
+#  so their pinned commits are fetchable; they carry no PR)
 ./srw/setup_forks.sh .
 ```
 
