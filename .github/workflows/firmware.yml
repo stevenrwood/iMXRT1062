@@ -6,7 +6,7 @@
 # SUBMODULES: .gitmodules points grbl / networking / sdcard at your forks and the superproject pins those
 # fork commits, so `submodules: recursive` below checks out exactly what you build locally:
 #   grbl        -> stevenrwood/core               srw/combined  (core fixes: G53 rotation guard, WCSROT, ...)
-#   networking  -> stevenrwood/Plugin_networking  feat/hostname-boot-info
+#   networking  -> stevenrwood/Plugin_networking  feat/line-ring-buffer-support
 #   sdcard      -> stevenrwood/Plugin_SD_card     srw/combined
 # The remaining submodules come from grblHAL upstream at their pinned commits.
 
