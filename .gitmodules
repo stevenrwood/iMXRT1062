@@ -30,7 +30,7 @@
 	url = https://github.com/grblHAL/Plugin_plasma
 [submodule "grblHAL_Teensy4/src/openpnp"]
 	path = grblHAL_Teensy4/src/openpnp
-	url = https://github.com/grblHAL/Plugin_OpenPNP
+	url = https://github.com/stevenrwood/Plugin_OpenPNP.git
 [submodule "grblHAL_Teensy4/src/bluetooth"]
 	path = grblHAL_Teensy4/src/bluetooth
 	url = https://github.com/grblHAL/Plugins_Bluetooth
@@ -39,7 +39,7 @@
 	url = https://github.com/grblHAL/Plugin_fans
 [submodule "grblHAL_Teensy4/src/webui"]
 	path = grblHAL_Teensy4/src/webui
-	url = https://github.com/grblHAL/Plugin_WebUI
+	url = https://github.com/stevenrwood/Plugin_WebUI.git
 [submodule "grblHAL_Teensy4/src/embroidery"]
 	path = grblHAL_Teensy4/src/embroidery
 	url = https://github.com/grblHAL/Plugin_embroidery

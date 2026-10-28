@@ -8,7 +8,13 @@
 #   grbl        -> stevenrwood/core               srw/combined  (core fixes: G53 rotation guard, WCSROT, ...)
 #   networking  -> stevenrwood/Plugin_networking  feat/line-ring-buffer-support
 #   sdcard      -> stevenrwood/Plugin_SD_card     srw/combined
+#   openpnp     -> stevenrwood/Plugin_OpenPNP     srw/combined  (version-reporting only; plugin disabled)
+#   webui       -> stevenrwood/Plugin_WebUI       srw/combined  (version-reporting only; plugin disabled)
 # The remaining submodules come from grblHAL upstream at their pinned commits.
+#
+# Every pin MUST be fetchable from a remote or this checkout step fails, not the build - run
+# 40777732221 died here because openpnp/webui were pinned to local-only commits. `git submodule
+# status` does not tell you that; `git branch -r --contains <pin>` in each submodule does.
 
 name: Build firmware (Teensy 4.x)
 

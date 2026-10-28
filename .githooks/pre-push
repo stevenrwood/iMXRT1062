@@ -1,8 +1,10 @@
 #!/bin/sh
 #
-# Refuse to push the firmware build branch if CI would publish a NON-prerelease.
+# Two guards on pushing the firmware build branch, because that push is a PUBLISH:
+#   1. every submodule pin must exist on some remote, or CI's checkout dies;
+#   2. CI must not be about to publish a NON-prerelease.
 #
-# Why this exists. Pushing srw/local-build-config triggers .github/workflows/firmware.yml, which
+# Guard 2 - why it exists. Pushing srw/local-build-config triggers .github/workflows/firmware.yml, which
 # builds and PUBLISHES a GitHub release. With prerelease:false that release becomes
 # /releases/latest - which is precisely what ioSender's FirmwareUpdateManager polls
 # (FirmwareRepo = "stevenrwood/iMXRT1062") and then offers to flash.
@@ -32,6 +34,46 @@ while read -r local_ref _ _ _; do
 done
 
 [ "$pushing_guarded" -eq 1 ] || exit 0
+
+# ---------------------------------------------------------------------------
+# Guard 1: every submodule pin must exist on some remote.
+#
+# CI checks out `submodules: recursive` at the superproject's pins. A pin that
+# only ever existed in a local clone makes the CHECKOUT step fail - not the
+# build - with "upload-pack: not our ref <sha>", and nothing local says so:
+# `git submodule status` prints the sha happily, and the firmware builds fine
+# because the sha resolves in your own object store.
+#
+# Observed 2026-10-28, run 40777732221: openpnp and webui were each pinned to
+# one local commit on top of grblHAL upstream, with no fork to push to. Fixed
+# by forking both; this check is here so the next one is caught before the push.
+#
+# Uses remote-TRACKING refs, so it is local and fast. It can be stale if a pin
+# was pushed from another clone - refresh with `git submodule foreach git fetch`.
+unreachable=""
+while read -r _ pin path _; do
+    [ -d "$path" ] || continue
+    [ -n "$(git -C "$path" branch -r --contains "$pin" 2>/dev/null)" ] || \
+        unreachable="$unreachable
+    $path  $pin"
+done <<EOF
+$(git ls-tree HEAD -r -d --full-name grblHAL_Teensy4/src 2>/dev/null | awk '$2=="commit"{print $1, $3, $4}')
+EOF
+
+if [ -n "$unreachable" ]; then
+    echo "" >&2
+    echo "BLOCKED: submodule pins that exist on no remote:$unreachable" >&2
+    echo "" >&2
+    echo "CI checks out submodules recursively at these pins, so the checkout step will" >&2
+    echo "fail with 'upload-pack: not our ref' - and so will any fresh clone of this" >&2
+    echo "branch. Push the commit to a fork (srw/setup_forks.sh wires the remotes), or" >&2
+    echo "re-pin the submodule to a commit that is actually published." >&2
+    echo "" >&2
+    echo "If the pin IS pushed and your tracking refs are just stale:" >&2
+    echo "    git submodule foreach git fetch --all" >&2
+    echo "" >&2
+    exit 1
+fi
 
 if [ "${FW_ALLOW_RELEASE:-}" = "1" ]; then
     echo "pre-push: FW_ALLOW_RELEASE=1 - allowing a push that may publish a non-prerelease." >&2

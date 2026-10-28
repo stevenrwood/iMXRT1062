@@ -87,6 +87,38 @@
           "upstream_pr": "https://github.com/grblHAL/Plugin_networking/pull/22",
           "fork_pr": "https://github.com/stevenrwood/Plugin_networking/pull/1",
           "status": "withdrawn upstream; staged on the fork"
+        },
+        {
+          "branch": "feat/line-ring-buffer-support",
+          "upstream_pr": null,
+          "fork_pr": null,
+          "status": "the branch the superproject actually pins - carries hostname-boot-info plus the line-ring RX buffer and the version-reporting change"
+        }
+      ]
+    },
+    {
+      "path": "grblHAL_Teensy4/src/openpnp",
+      "upstream": "https://github.com/grblHAL/Plugin_OpenPNP",
+      "fork":     "https://github.com/stevenrwood/Plugin_OpenPNP.git",
+      "branches_pushed": [
+        {
+          "branch": "srw/combined",
+          "upstream_pr": null,
+          "fork_pr": null,
+          "status": "one commit: GRBL_VERSION/GRBL_BUILD are gone, report FIRMWARE_VERSION instead. Forked 2026-10-28 only so the pin is fetchable - the plugin is disabled (OPENPNP_ENABLE commented out), so this does not reach the firmware binary."
+        }
+      ]
+    },
+    {
+      "path": "grblHAL_Teensy4/src/webui",
+      "upstream": "https://github.com/grblHAL/Plugin_WebUI",
+      "fork":     "https://github.com/stevenrwood/Plugin_WebUI.git",
+      "branches_pushed": [
+        {
+          "branch": "srw/combined",
+          "upstream_pr": null,
+          "fork_pr": null,
+          "status": "one commit: GRBL_VERSION/GRBL_BUILD are gone, report FIRMWARE_VERSION instead. Forked 2026-10-28 only so the pin is fetchable - the plugin is disabled (WEBUI_ENABLE commented out), so this does not reach the firmware binary."
         }
       ]
     }
